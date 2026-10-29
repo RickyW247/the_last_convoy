@@ -1,0 +1,82 @@
+
+# The Last Convoy
+# Survivor name data
+
+MALE_FIRST_NAMES = [
+    "Aaron", "Adam", "Adrian", "Alan", "Albert",
+    "Alex", "Alexander", "Andrew", "Anthony", "Arthur",
+    "Austin", "Benjamin", "Blake", "Brandon", "Brian",
+    "Bruce", "Caleb", "Carl", "Charles", "Christian",
+    "Christopher", "Cody", "Connor", "Craig", "Daniel",
+    "David", "Derek", "Dominic", "Donald", "Douglas",
+    "Dylan", "Edward", "Eli", "Elijah", "Eric",
+    "Ethan", "Eugene", "Evan", "Frank", "Gabriel",
+    "Gary", "George", "Gerald", "Gordon", "Grant",
+    "Gregory", "Harold", "Harry", "Henry", "Howard",
+    "Hunter", "Ian", "Isaac", "Jack", "Jacob",
+    "James", "Jason", "Jeffrey", "Jeremy", "Jesse",
+    "Joel", "John", "Jonathan", "Jordan", "Jose",
+    "Joseph", "Joshua", "Julian", "Justin", "Keith",
+    "Kenneth", "Kevin", "Kyle", "Lawrence", "Leo",
+    "Leonard", "Liam", "Logan", "Louis", "Lucas",
+    "Luke", "Marcus", "Mark", "Martin", "Mason",
+    "Matthew", "Michael", "Nathan", "Nathaniel", "Nicholas",
+    "Noah", "Oliver", "Oscar", "Owen", "Patrick",
+    "Paul", "Peter", "Philip", "Raymond", "Richard",
+    "Robert", "Roger", "Ronald", "Russell", "Ryan",
+    "Samuel", "Scott", "Sean", "Sebastian", "Stephen",
+    "Steven", "Theodore", "Thomas", "Timothy", "Travis",
+    "Trevor", "Tyler", "Victor", "Vincent", "Walter",
+    "Wesley", "William", "Zachary"
+]
+
+FEMALE_FIRST_NAMES = [
+    "Abigail", "Alexandra", "Alice", "Alicia", "Allison",
+    "Amanda", "Amber", "Amy", "Andrea", "Angela",
+    "Anna", "Annabelle", "April", "Ariana", "Ashley",
+    "Audrey", "Autumn", "Ava", "Barbara", "Bethany",
+    "Brianna", "Brooke", "Caitlin", "Caroline", "Catherine",
+    "Charlotte", "Chelsea", "Chloe", "Christina", "Claire",
+    "Clara", "Courtney", "Crystal", "Daisy", "Danielle",
+    "Diana", "Donna", "Eleanor", "Elizabeth", "Ella",
+    "Ellie", "Emily", "Emma", "Erica", "Erin",
+    "Evelyn", "Faith", "Fiona", "Gabriella", "Grace",
+    "Hailey", "Hannah", "Harper", "Heather", "Helen",
+    "Isabella", "Jade", "Jamie", "Jane", "Jasmine",
+    "Jennifer", "Jessica", "Jill", "Joanna", "Jordan",
+    "Josephine", "Julia", "Julie", "Katherine", "Kathleen",
+    "Kayla", "Kelly", "Kimberly", "Laura", "Lauren",
+    "Leah", "Lillian", "Lily", "Lindsay", "Lisa",
+    "Lucy", "Madeline", "Madison", "Margaret", "Maria",
+    "Marie", "Mary", "Megan", "Melanie", "Michelle",
+    "Morgan", "Naomi", "Natalie", "Nicole", "Nina",
+    "Olivia", "Paige", "Patricia", "Rachel", "Rebecca",
+    "Riley", "Rose", "Samantha", "Sandra", "Sarah",
+    "Savannah", "Sharon", "Sierra", "Sophia", "Stephanie",
+    "Susan", "Taylor", "Teresa", "Vanessa", "Victoria",
+    "Violet", "Wendy", "Whitney", "Zoe"
+]
+
+LAST_NAMES = [
+    "Adams", "Allen", "Anderson", "Armstrong", "Bailey",
+    "Baker", "Barnes", "Bennett", "Brooks", "Brown",
+    "Bryant", "Butler", "Campbell", "Carter", "Clark",
+    "Collins", "Cook", "Cooper", "Cox", "Crawford",
+    "Davis", "Diaz", "Edwards", "Ellis", "Evans",
+    "Fisher", "Flores", "Foster", "Garcia", "Gibson",
+    "Gonzalez", "Gordon", "Graham", "Gray", "Green",
+    "Griffin", "Hall", "Hamilton", "Harris", "Hayes",
+    "Henderson", "Hernandez", "Hill", "Howard", "Hughes",
+    "Jackson", "James", "Jenkins", "Johnson", "Jones",
+    "Kelly", "Kennedy", "King", "Lee", "Lewis",
+    "Long", "Lopez", "Martin", "Martinez", "Miller",
+    "Mitchell", "Moore", "Morgan", "Morris", "Murphy",
+    "Nelson", "Parker", "Patterson", "Perez", "Perry",
+    "Peterson", "Phillips", "Powell", "Price", "Ramirez",
+    "Reed", "Richardson", "Rivera", "Roberts", "Robinson",
+    "Rodriguez", "Rogers", "Ross", "Russell", "Sanchez",
+    "Sanders", "Scott", "Simmons", "Smith", "Stewart",
+    "Taylor", "Thomas", "Thompson", "Torres", "Turner",
+    "Walker", "Ward", "Washington", "Watson", "White",
+    "Williams", "Wilson", "Wood", "Wright", "Young"
+]
