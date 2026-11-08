@@ -12,6 +12,8 @@ LORE = [
     "far across the sea, away from the dead.",
     "The ships will not wait forever. They sail once the horde reaches the shore, and the horde is already moving "
     "west, drawn by the sound of every engine still running.",
-    "You have a pickup truck, a passenger van, a school bus and a handful of survivors who trust you to get "
-    "them out. The road west is long, supplies are thin, and the dead are close behind. Keep moving.",
+    "You have whatever vehicles you could save from your old life, what little fuel and food you could gather, and "
+    "a handful of survivors who trust you to get them out. The road west is long, supplies are thin, and the dead "
+    "are close behind.",
+    "Keep moving.",
 ]

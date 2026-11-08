@@ -1,0 +1,138 @@
+THIRD-PARTY ASSET CREDITS AND LICENSES
+
+========================================
+
+MUSIC
+
+Title: After The Disaster Pt. 1 through 8 
+
+Composer: İlker Yalçıner (onemansymphony)
+
+Source: https://opengameart.org/content/after-the-disaster-pt-1-through-8
+
+Composer's website: https://ilkeryalciner.com/
+
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+License URL: https://creativecommons.org/licenses/by/4.0/
+
+Usage: This music is used in this Pygame project as background music and/or other in-game audio.
+
+Changes: No changes were made to the original music.
+
+Attribution: The music is credited to its original composer, İlker Yalçıner. No ownership of the original music is claimed by the developer of this game.
+
+License terms: The music is used under the Creative Commons Attribution 4.0 International license. Appropriate credit must be provided, a link to the license must be included, and any changes must be indicated if applicable.
+
+========================================
+
+SOUND EFFECTS
+
+Title: 87 Clickety Clips 
+
+Author: OwlishMedia
+
+Source: https://opengameart.org/content/87-clickety-clips
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Usage: Click and interface sound effects used in this Pygame project.
+
+Changes: No changes were made to the original sound effects.
+
+Attribution: Created by OwlishMedia and obtained from OpenGameArt.org.
+
+License terms: The sound effects are released under CC0 1.0. They may be copied, modified, distributed, and used commercially without requesting permission or providing attribution, to the extent permitted by law. Attribution is included here as a courtesy.
+
+========================================
+
+Title: Keyboard Soundpack #1 [Typing and Single Keystrokes]
+
+Author: unicaegames
+
+Source: https://opengameart.org/content/keyboard-soundpack-1-typing-and-single-keystrokes
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Usage: Keyboard typing and individual keystroke sound effects used in this Pygame project.
+
+Changes: No changes were made to the original sound effects.
+
+Attribution: Created by unicaegames and obtained from OpenGameArt.org.
+
+License terms: The sound effects are released under CC0 1.0. They may be copied, modified, distributed, and used commercially without requesting permission or providing attribution, to the extent permitted by law. Attribution is included here as a courtesy.
+
+========================================
+
+Title: Parisian Ring Road, Cockpit
+Author: Joseph SARDIN
+
+Source: https://bigsoundbank.com/parisian-ring-road-cockpit-s1079.html
+
+Website: https://bigsoundbank.com/
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Usage: Background traffic and vehicle ambience used in this Pygame project.
+
+Changes: No changes were made to the original audio file.
+
+Attribution: Created by Joseph SARDIN and obtained from BigSoundBank.com.
+
+License terms: The audio is released under CC0 1.0. It may be copied, modified, distributed, and used commercially without requesting permission or providing attribution, to the extent permitted by law. Attribution is included here as a courtesy.
+
+========================================
+
+Title: Parisian Ring Road
+Author: Joseph SARDIN
+
+Source: https://bigsoundbank.com/parisian-ring-road-s1080.html
+
+Website: https://bigsoundbank.com/
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Usage: Traffic ambience and background environmental audio used in this Pygame project.
+
+Changes: No changes were made to the original audio file.
+
+Attribution: Created by Joseph SARDIN and obtained from BigSoundBank.com.
+
+License terms: The audio is released under CC0 1.0. It may be copied, modified, distributed, and used commercially without requesting permission or providing attribution, to the extent permitted by law. Attribution is included here as a courtesy.
+
+========================================
+
+Title: Car on a Road
+Author: Joseph SARDIN
+
+Source: https://bigsoundbank.com/car-on-a-road-s1286.html
+
+Website: https://bigsoundbank.com/
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+Usage: Vehicle engine, driving and road sound effects used in this Pygame project.
+
+Changes: No changes were made to the original audio file.
+
+Attribution: Created by Joseph SARDIN and obtained from BigSoundBank.com.
+
+License terms: The audio is released under CC0 1.0. It may be copied, modified, distributed, and used commercially without requesting permission or providing attribution, to the extent permitted by law. Attribution is included here as a courtesy.
+
+======================================== GENERAL NOTICE
+
+This file documents third-party audio assets used in this game.
+
+Each asset remains subject to its respective license. This notice does not claim ownership of third-party music or sound effects.
+
+The game's original source code and other assets may be subject to separate licenses.
