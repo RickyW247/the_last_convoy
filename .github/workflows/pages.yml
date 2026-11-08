@@ -19,11 +19,19 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pygbag
+      - name: Prepare a web-only copy (MP3 -> OGG; pygbag rejects .mp3 files)
+        run: |
+          mkdir site
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'site' ./ site/
+          find site -iname '*.mp3' | while read -r f; do
+            ffmpeg -y -loglevel error -i "$f" -c:a libvorbis -q:a 3 "${f%.*}.ogg"
+            rm "$f"
+          done
       - name: Build the web version
-        run: python -m pygbag --build --title "The Last Convoy" .
+        run: python -m pygbag --build --title "The Last Convoy" site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: site/build/web
   deploy:
     needs: build
     runs-on: ubuntu-latest

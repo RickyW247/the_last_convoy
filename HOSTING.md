@@ -8,3 +8,7 @@
 
 Desktop play is unchanged (`python main.py` with normal pygame). Only the cloud build uses pygame-ce.
 Settings and saves live in the browser's localStorage (per browser and device).
+
+
+## Audio (updated)
+You no longer need to run `tools/convert_audio.py` or commit `.ogg` files. The workflow builds from a temporary copy in which every `.mp3` is converted to `.ogg` and the `.mp3` removed (pygbag refuses to build while any `.mp3` is present). Your repo keeps the `.mp3` files for the desktop game. If you already committed `.ogg` files, that is harmless.
