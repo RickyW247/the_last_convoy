@@ -10,8 +10,8 @@ from platform_web import IS_WEB, stretch_canvas_to_page, viewport_size
 
 
 MIN_SIZE = (640, 480) # the smallest window
-WEB_TARGET_HEIGHT = 540      # browser build: the drawing surface is about this tall (the page scales it up to fill the
-                             # window); smaller = bigger text and sprites on screen, larger = sharper but smaller
+WEB_MIN_SIZE = (640, 432)    # browser build: the smallest drawing surface the page may zoom (whole numbers only) down to;
+                             # lower = bigger text and sprites on screen, higher = more room per screen
 
 WINDOWED_SIZE = None              # the window size to come back to when fullscreen ends
 window_fullscreen = False         # the mode the window is in now (game.fullscreen is the mode that is wanted)
@@ -138,7 +138,7 @@ def open_windowed():
 
 
 def fit_web_viewport(surface):
-    """Browser only: make the drawing surface the same shape as the page's viewport (zoomed, see WEB_TARGET_HEIGHT).
+    """Browser only: make the drawing surface the same shape as the page's viewport (zoomed by a whole number, see WEB_MIN_SIZE).
 
     pygbag scales the canvas to fit the page while keeping the surface's aspect ratio, so a surface whose shape differs
     from the page leaves grey bars. Matching the surface to the viewport removes them; the layout code already adapts
@@ -156,11 +156,10 @@ def fit_web_viewport(surface):
     # A big browser window (1920 x 1080 and more) would make the text and sprites look tiny and every frame slow to draw.
     # So the game draws on a smaller surface, `zoom` times smaller than the page, and the browser scales the canvas up to
     # fill the page (stretch_canvas_to_page, nearest-neighbour so the pixel art and text stay sharp). The zoom aims at a
-    # surface WEB_TARGET_HEIGHT pixels tall, in steps of a quarter so it is often a whole number (2 on a 1080p screen),
-    # never below 1 and never so large that the surface falls under the minimum window size.
-    zoom = min(wanted[0] / MIN_SIZE[0], wanted[1] / MIN_SIZE[1], wanted[1] / WEB_TARGET_HEIGHT)
-    zoom = max(1.0, int(zoom * 4) / 4)
-    wanted = (max(MIN_SIZE[0], round(wanted[0] / zoom)), max(MIN_SIZE[1], round(wanted[1] / zoom)))
+    # surface that is a WHOLE number of times smaller than the page (a fractional zoom makes some pixels wider than others,
+    # which wrecks small pixel text): the biggest whole zoom that keeps the surface at least WEB_MIN_SIZE.
+    zoom = max(1, int(min(wanted[0] / WEB_MIN_SIZE[0], wanted[1] / WEB_MIN_SIZE[1])))
+    wanted = (max(MIN_SIZE[0], round(wanted[0] / zoom)), max(WEB_MIN_SIZE[1], round(wanted[1] / zoom)))
     if surface is not None and tuple(surface.get_size()) == wanted:
         if _web_frames % 60 == 0:
             stretch_canvas_to_page()   # the page's own script may restyle the canvas: put it back about once a second

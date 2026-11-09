@@ -168,7 +168,7 @@ Setup: python -m pip install pygame | Run: python main.py | Test: python test_co
 Version history (newest first; older entries are grouped):
 - 2.16: browser build fills the page: the drawing surface follows the browser viewport (platform_web.viewport_size,
         window.fit_web_viewport, called at start-up and once a frame on the web) and the canvas is stretched to the page
-        (platform_web.stretch_canvas_to_page, nearest-neighbour; surface about window.WEB_TARGET_HEIGHT tall), so there are no grey bars and no squashing. Desktop unchanged.
+        (platform_web.stretch_canvas_to_page, nearest-neighbour; whole-number zoom, window.WEB_MIN_SIZE), so there are no grey bars and no squashing. Desktop unchanged.
 - 2.15: browser build: async main loop (asyncio.sleep(0) per frame), platform_web.py, localStorage for settings / saves / achievements (settings_store, savegame, achievements),
         touch.py (tap, swipe-to-scroll, long press = fast-forward),
         web branch in window.set_window_mode, no QUIT GAME on the web, credits links open a new tab, .ogg audio fallback, GitHub Pages workflow. Gameplay unchanged.
