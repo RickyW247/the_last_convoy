@@ -315,8 +315,8 @@ def setup():
     SCREEN = pygame.display.set_mode(
         (WIDTH, HEIGHT), pygame.RESIZABLE
     )
-    SCREEN = window.fit_web_viewport(SCREEN)   # browser: start at the page's size, not the default WIDTH x HEIGHT
     pygame.display.set_caption("The Last Convoy — Prototype")
+    SCREEN = window.fit_web_viewport(SCREEN)   # browser: start at the page's size, not the default WIDTH x HEIGHT
     CLOCK = pygame.time.Clock()
     pygame.key.set_repeat(400, 60)   # holding Tab / an arrow key keeps moving; main() ignores repeats of every other key
 
