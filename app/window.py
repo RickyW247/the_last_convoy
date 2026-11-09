@@ -179,7 +179,7 @@ def fit_web_viewport(surface):
 
     stretch_canvas_to_page()   # the canvas's box on the page follows the new surface size
     try:   # TEMPORARY check of which build is live: the tab title starts with the zoom and the surface size
-        pygame.display.set_caption("[v2.17 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
+        pygame.display.set_caption("[v2.18 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
     except Exception:
         pass
     return surface

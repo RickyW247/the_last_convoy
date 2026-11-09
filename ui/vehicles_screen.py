@@ -41,6 +41,27 @@ def _stat_color(stat, now, base, default):
     return GREEN if better else RED
 
 
+def _text_fonts(small, tiny, row_h):
+    """The fonts a line of text may use in a row `row_h` tall, largest first: `small` (16 px with the pixel font) when its
+    line fits the row, then `tiny` (8 px). The screens used `tiny` for all their detail text, which is far too small in a
+    big window; every line now takes the larger font whenever its text fits."""
+    return (small, tiny) if small is not tiny and small.get_linesize() <= row_h else (tiny,)
+
+
+def _fit_best(width, height, variant_sets, fonts):
+    """(font, [text, ...]) for lines of text that share one font, each in a box `width` x `height`: the first of `fonts`
+    (largest first) whose line fits the height and in which one variant of EVERY set of `variant_sets` (each longest first)
+    fits the width, with the first such variant of each set. When no font manages it: the last font and the last variant of
+    each set (the caller's text_in_rect cuts it with "...")."""
+    for font in fonts:
+        if font.get_linesize() > height:
+            continue
+        chosen = [next((v for v in variants if font.size(v)[0] <= width), None) for variants in variant_sets]
+        if None not in chosen:
+            return font, chosen
+    return fonts[-1], [variants[-1] for variants in variant_sets]
+
+
 def _flow_items(items, font, width, gap):
     """Lay (text, colour) items out left to right in lines no wider than `width`: [[(x, text, colour), ...], ...]."""
     lines, line, x = [], [], 0
@@ -56,22 +77,24 @@ def _flow_items(items, font, width, gap):
     return lines
 
 
-def _card_stat_lines(font, width, max_lines, stats, base, owned):
-    """The card's stats as coloured lines. A changed stat is first written out in full ("Speed 70 -> 76"); if that
-    needs more lines than the card has, the short form with just the new number is used (still coloured)."""
-    gap = font.size("   ")[0]
+def _card_stat_lines(fonts, width, max_lines, stats, base, owned):
+    """(font, lines): the card's stats as coloured lines, in the first of `fonts` (largest first) that holds them in
+    `max_lines` lines. A changed stat is first written out in full ("Speed 70 -> 76"); if that needs more lines than the
+    card has, the short form with just the new number is used (still coloured) before the next smaller font is tried."""
     lines = []
-    for long_form in (True, False):
-        items = []
-        for key, label in _CARD_STATS:
-            now = stats[key]
-            changed = owned and now != base[key]
-            text = f"{label} {base[key]} -> {now}" if long_form and changed else f"{label} {now}"
-            items.append((text, _stat_color(key, now, base[key], MUTED) if owned else MUTED))
-        lines = _flow_items(items, font, width, gap)
-        if len(lines) <= max_lines:
-            return lines
-    return lines[:max_lines]
+    for font in fonts:
+        gap = font.size("   ")[0]
+        for long_form in (True, False):
+            items = []
+            for key, label in _CARD_STATS:
+                now = stats[key]
+                changed = owned and now != base[key]
+                text = f"{label} {base[key]} -> {now}" if long_form and changed else f"{label} {now}"
+                items.append((text, _stat_color(key, now, base[key], MUTED) if owned else MUTED))
+            lines = _flow_items(items, font, width, gap)
+            if len(lines) <= max_lines:
+                return font, lines
+    return fonts[-1], lines[:max_lines]
 
 
 def _draw_ability(surface, rect, vehicle_type, owned, tiny, lh):
@@ -110,6 +133,7 @@ def draw_vehicle_card(surface, game, card):
     if ability:   # reserve only as many text lines as the full effect text needs at this card width
         ability_lines = len(wrap_pixels(ability["text"], tiny, max(0, card[2] - 2 * tpx(8, k)))) or 1
     parts = vehicle_card_layout(card, k, ability_lines)
+    detail_fonts = _text_fonts(small, tiny, lh)   # the card's detail lines: the larger font where its text fits
     owned_vehicle = next((v for v in game.vehicles if v.vehicle_type == name), None)
     base_stats = VEHICLE_SPECS[name]
     stats = owned_vehicle.stats if owned_vehicle else base_stats   # an owned vehicle shows its upgraded numbers
@@ -120,8 +144,10 @@ def draw_vehicle_card(surface, game, card):
 
     if parts["role"]:
         rx, ry, rw, _rh = parts["role"]
-        for i, line in enumerate(wrap_pixels(VEHICLE_ROLES.get(name, ""), tiny, rw)[:2]):
-            draw_text(surface, line, rx, ry + i * lh, MUTED, tiny)
+        role = VEHICLE_ROLES.get(name, "")
+        role_font = next((f for f in detail_fonts if len(wrap_pixels(role, f, rw)) <= 2), tiny)   # two lines at most
+        for i, line in enumerate(wrap_pixels(role, role_font, rw)[:2]):
+            draw_text(surface, line, rx, ry + i * lh, MUTED, role_font)
 
     # Picture: the side-view sprite (facing west / left), scaled from the source image to fill the picture box.
     pic = pygame.Rect(parts["picture"])
@@ -161,22 +187,22 @@ def draw_vehicle_card(surface, game, card):
         full = stats["health"]
         hp_color = GREEN if owned_vehicle.health >= 0.6 * full else (YELLOW if owned_vehicle.health >= 0.3 * full else RED)
         gained = full - base_stats["health"]   # upgrades raise (or lower) the maximum health
-        health_text = fit_variants(tiny, dw, ((f"Health {owned_vehicle.health}/{full} ({gained:+d})",) if gained else ())
-                                   + (f"Health {owned_vehicle.health}/{full}",))
-        text_in_rect(surface, health_text, (dx, dy, dw, lh), _stat_color("health", full, base_stats["health"], WHITE), tiny)
+        health_font, (health_text,) = _fit_best(dw, lh, [((f"Health {owned_vehicle.health}/{full} ({gained:+d})",) if gained else ())
+                                                         + (f"Health {owned_vehicle.health}/{full}",)], detail_fonts)
+        text_in_rect(surface, health_text, (dx, dy, dw, lh), _stat_color("health", full, base_stats["health"], WHITE), health_font)
         draw_bar(surface, dx, dy + lh + 3, dw, tpx(10, k), owned_vehicle.health, full, hp_color)
     else:
-        text_in_rect(surface, fit_variants(tiny, dw, (f"Recovery: {game.recovery_price(name)} scrap + 1 day",
-                                                         f"Recovery: {game.recovery_price(name)} scrap")),
-                      (dx, dy, dw, lh), WHITE, tiny)
-        text_in_rect(surface, fit_variants(tiny, dw, ("Starts at 70% health once recovered.",
-                                                         "Starts at 70% health.", "Starts at 70% HP.")),
-                      (dx, dy + lh, dw, lh), MUTED, tiny)
+        recover_font, (recover_text, starts_text) = _fit_best(dw, lh, [
+            (f"Recovery: {game.recovery_price(name)} scrap + 1 day", f"Recovery: {game.recovery_price(name)} scrap"),
+            ("Starts at 70% health once recovered.", "Starts at 70% health.", "Starts at 70% HP.")], detail_fonts)
+        text_in_rect(surface, recover_text, (dx, dy, dw, lh), WHITE, recover_font)
+        text_in_rect(surface, starts_text, (dx, dy + lh, dw, lh), MUTED, recover_font)
 
     sx, sy, sw, sh = parts["stats"]
-    for i, line in enumerate(_card_stat_lines(tiny, sw, sh // lh, stats, base_stats, owned_vehicle is not None)):
+    stat_font, stat_lines = _card_stat_lines(detail_fonts, sw, sh // lh, stats, base_stats, owned_vehicle is not None)
+    for i, line in enumerate(stat_lines):
         for x, text, color in line:
-            text_in_rect(surface, text, (sx + x, sy + i * lh, sw - x, lh), color, tiny)
+            text_in_rect(surface, text, (sx + x, sy + i * lh, sw - x, lh), color, stat_font)
 
 
 ROW_HOVER_BG = (40, 60, 66)   # a table row under the mouse: between the zebra colour and the selected row's (46, 68, 74)
@@ -235,8 +261,9 @@ def _worst_case_cells(compact, names):
 
 @lru_cache(maxsize=64)
 def _table_font(columns, pad, row_h, compact, names, body, small, tiny):
-    """The largest of body / small / tiny that fits: the row must be tall enough and every column must hold its
-    worst-case text in it. Falls back to tiny.
+    """The largest of body / small / tiny that fits: the row must be tall enough and every column after the name must
+    hold its worst-case text in it. Falls back to tiny. (The vehicle name column is left out: one long name used to push
+    the whole table down to the tiny font. A name too wide for its column is drawn in tiny, see _draw_vehicle_table.)
 
     Depends only on the table geometry (columns, cell padding, row height) and the fonts, so the font does not flip between
     sizes as a vehicle's health text changes width."""
@@ -245,7 +272,7 @@ def _table_font(columns, pad, row_h, compact, names, body, small, tiny):
         if font.get_linesize() > row_h - 4:
             continue
         if all(font.size(str(cell))[0] <= w - 2 * pad
-               for cells in worst for cell, (_x, w) in zip(cells, columns)):
+               for cells in worst for cell, (_x, w) in list(zip(cells, columns))[1:]):
             return font
     return tiny
 
@@ -274,15 +301,18 @@ def _draw_vehicle_table(surface, game, g):
     header = pygame.Rect(g["table_header"])
     draw_panel(surface, header, PANEL_LIGHT, 1)
     heads = _TABLE_HEADERS_COMPACT if g["compact"] else _TABLE_HEADERS
+    font = _table_font(tuple(columns), pad, row_h, g["compact"], tuple(STANDARD_VEHICLES) + tuple(n for n in vehicle_table_order(game) if n in BONUS_VEHICLES), body, small, tiny)   # from the table geometry only, never the values
+    # The heading row uses the table's font when every label fits its column and the row, else the tiny font.
+    head_font = font if (font.get_linesize() <= header.h
+                         and all(font.size(label)[0] <= w - 2 * pad for (_x, w), label in zip(columns, heads))) else tiny
     for (x, w), label in zip(columns, heads):
-        text_in_rect(surface, label, (x + pad, header.y, w - 2 * pad, header.h), WHITE, tiny)
+        text_in_rect(surface, label, (x + pad, header.y, w - 2 * pad, header.h), WHITE, head_font)
 
     all_rows = _vehicle_table_rows(game, g["compact"])
     per_page = g["per_page"]
     first = max(0, min(vehicle_page(game), g["pages"] - 1)) * per_page
     rows = all_rows[first:first + per_page]   # one page of the catalogue
     hovered = _hovered_row(surface, game)   # the row under the mouse gets a lighter background (and a hand cursor, main.py)
-    font = _table_font(tuple(columns), pad, row_h, g["compact"], tuple(STANDARD_VEHICLES) + tuple(n for n in vehicle_table_order(game) if n in BONUS_VEHICLES), body, small, tiny)   # from the table geometry only, never the values
     for slot, (name, cells, colors) in enumerate(rows):
         index = first + slot   # the position in the whole catalogue (hover and the zebra stripes follow it)
         row = pygame.Rect(table.x, g["rows_top"] + slot * row_h, table.w, row_h - 2)
@@ -295,13 +325,16 @@ def _draw_vehicle_table(surface, game, g):
         elif index % 2 == 0:
             draw_panel(surface, row, CARD_BG, -1)
         for (x, w), cell, color in zip(columns, cells, colors):
-            text_in_rect(surface, cell, (x + pad, row.y, w - 2 * pad, row.h), color, font)
+            # A cell too wide for the table's font (a long vehicle name) is drawn in the tiny one, never cut with "...".
+            cell_font = font if font is tiny or font.size(str(cell))[0] <= w - 2 * pad else tiny
+            text_in_rect(surface, cell, (x + pad, row.y, w - 2 * pad, row.h), color, cell_font)
 
     if g["paged"]:   # the PREV / NEXT buttons are in `buttons` (drawn by draw_vehicles_screen); the label sits between them
         page = max(0, min(vehicle_page(game), g["pages"] - 1))
         lx, ly, lw, lh_ = g["page_label"]
-        text_in_rect(surface, fit_variants(tiny, lw, (f"Page {page + 1} / {g['pages']}", f"{page + 1}/{g['pages']}")),
-                     (lx, ly, lw, lh_), MUTED, tiny, "center")
+        page_font, (page_text,) = _fit_best(lw, lh_, [(f"Page {page + 1} / {g['pages']}", f"{page + 1}/{g['pages']}")],
+                                            _text_fonts(small, tiny, lh_))
+        text_in_rect(surface, page_text, (lx, ly, lw, lh_), MUTED, page_font, "center")
 
 
 def _summary_items(game, totals):
@@ -371,6 +404,7 @@ def draw_vehicles_screen(surface, game, buttons):
     g = vehicles_layout(*surface.get_size(), len(vehicle_table_order(game)))
     _medium, _body, small, tiny = screen_fonts(surface.get_size())
     lh = tpx(LINE_H, g["k"])
+    text_fonts = _text_fonts(small, tiny, lh)   # the larger font for the help and status lines where its text fits
     surface.fill(SCREEN_BG)
     draw_panel(surface, g["panel"], PANEL, 1)
     draw_heading(surface, "VEHICLE MANAGEMENT", g["header"])
@@ -388,10 +422,12 @@ def draw_vehicles_screen(surface, game, buttons):
             merged = ("Select a vehicle to recover, upgrade or abandon it.  SPD speed  HP health  PASS seats  CARGO storage  DEF defense  FCAP fuel capacity  FUSE fuel use",
                       "Select a vehicle to recover, upgrade or abandon it.  SPD speed  HP health  PASS seats  DEF defense  FCAP fuel cap  FUSE fuel use",
                       "Select a vehicle to recover, upgrade or abandon.  SPD speed  HP health  PASS seats  DEF defense  FCAP fuel  FUSE fuel use")
-            text_in_rect(surface, fit_variants(tiny, sw, merged), (sx, sy, sw, lh), MUTED, tiny)
+            sub_font, (sub_text,) = _fit_best(sw, lh, [merged], text_fonts)
+            text_in_rect(surface, sub_text, (sx, sy, sw, lh), MUTED, sub_font)
         else:
-            for i, variants in enumerate(lines):
-                text_in_rect(surface, fit_variants(tiny, sw, variants), (sx, sy + i * lh, sw, lh), MUTED, tiny)
+            sub_font, sub_texts = _fit_best(sw, lh, lines, text_fonts)   # both lines share one font
+            for i, text in enumerate(sub_texts):
+                text_in_rect(surface, text, (sx, sy + i * lh, sw, lh), MUTED, sub_font)
 
     totals = game.convoy_stats()
     if g["summary"]:
@@ -404,7 +440,7 @@ def draw_vehicles_screen(surface, game, buttons):
     selected = game.selected_vehicle_type
     owned_types = {vehicle.vehicle_type for vehicle in game.vehicles}
     stx, sty, stw, _sth = g["status"]
-    text_in_rect(surface, f"Selected: {selected} | Scrap: {game.scrap}", (stx, sty, stw, lh), YELLOW, tiny)
+    selected_variants = (f"Selected: {selected} | Scrap: {game.scrap}", f"{selected} | Scrap: {game.scrap}")
     if selected in owned_types:
         if game.abandon_confirm == selected:
             color = RED
@@ -430,6 +466,8 @@ def draw_vehicles_screen(surface, game, buttons):
         color = MUTED
         variants = ("Recover vehicles in a stop with a Truck Stop, Depot or Military Installation.",
                     "Needs a stop with a Truck Stop, Depot or Military Inst.")
-    text_in_rect(surface, fit_variants(tiny, stw, variants), (stx, sty + lh + 2, stw, lh), color, tiny)
+    status_font, (selected_text, status_text) = _fit_best(stw, lh, [selected_variants, variants], text_fonts)
+    text_in_rect(surface, selected_text, (stx, sty, stw, lh), YELLOW, status_font)
+    text_in_rect(surface, status_text, (stx, sty + lh + 2, stw, lh), color, status_font)
     for button in buttons:
         button.draw(surface, selected=(button.label == "CONFIRM ABANDON"))

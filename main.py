@@ -1,5 +1,5 @@
 """THE LAST CONVOY — Prototype README
-Version: 2.17
+Version: 2.18
 
 Development / versioning convention:
 - For every update, increment the version number (e.g. 2.0 -> 2.1; the numbering went from 1.99 straight to 2.0).
@@ -168,6 +168,12 @@ Project files:
 Setup: python -m pip install pygame | Run: python main.py | Test: python test_convoy.py
 
 Version history (newest first; older entries are grouped):
+- 2.18: bigger text where there is room (the pixel font only has 8 px and 16 px sizes, and a lot of text sat at 8 px even in a big window):
+        the vehicle name labels in the convoy scene (ui/convoy._label_font), the RECENT EVENTS log (long messages wrap instead of
+        forcing 8 px: _wrapped_events), the right-hand CURRENT STOP column (stop name on two lines, descriptions and key hints
+        at 16 px when the column fits: _info_flow) and the vehicles screen (table, headings, help and status lines, card details:
+        _fit_best / _text_fonts; a long vehicle name is drawn in 8 px instead of deciding the whole table's size).
+        Windows and layouts too small for the bigger text keep the 8 px text. Gameplay unchanged.
 - 2.17: browser build: closing the tab no longer makes the music crackle. Chrome's "Leave site?" dialog blocks the page's main thread, which also
         mixes the audio; platform_web.install_leave_guard (called once in setup(), web only) suspends the audio context on beforeunload and
         resumes it if the player stays. Window caption check now says v2.17. Gameplay unchanged.

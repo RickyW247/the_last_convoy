@@ -23,7 +23,8 @@ from .vehicle_rendering import get_rig_sprite, get_vehicle_sprite, reference_spr
 from upgrade_data import TRAILER_DUST, UPGRADE_LOOKS
 from vehicle_data import DEFAULT_DUST_POINTS, VEHICLE_DUST_POINTS, VEHICLE_LOOKS
 from textscale import text_scale, tpx
-from widgets import draw_bar, draw_text, fit_text, scaled_font, text_ladder, text_surface
+from widgets import (draw_bar, draw_text, fit_paragraph, fit_text, fit_variants, scaled_font, text_ladder, text_surface,
+                     wrap_pixels)
 
 
 BACKGROUND_PATH = os.path.join(
@@ -400,6 +401,22 @@ def draw_scene_label(surface, text, font=TINY, **place):
     return rect
 
 
+def _label_font(surface, vehicles, scaled, gap, scene_h, room_h):
+    """The font of the vehicle name labels (and of the "2+" counts): the largest of the window's text ladder that is not
+    taller than about 6% of the scene, whose line fits the room under the wheels (`room_h`; the labels may pull the vehicles
+    up by a few pixels at most) and in which every name fits under its own vehicle. TINY when none does (a small window, or
+    a convoy with a vehicle too narrow for its name)."""
+    names = [(UPGRADE_LOOKS.get(v.sprite_type) or VEHICLE_LOOKS[v.vehicle_type])["label"] for v in vehicles]
+    for font in text_ladder(surface.get_size()):
+        if font.get_linesize() <= TINY.get_linesize():
+            break   # not bigger than TINY: nothing to gain
+        if font.get_linesize() > 0.06 * scene_h or font.get_linesize() + 1 > room_h + 4:
+            continue
+        if all(font.size(name)[0] + 8 <= spr.get_width() + gap for name, spr in zip(names, scaled)):
+            return font
+    return TINY
+
+
 def draw_convoy_vehicles(surface, game, scene, labels=True):
     """Draw the owned vehicles in a left-facing line, sized and placed relative to the scene rectangle. A convoy too long
     for the scene slides sideways (eased) when the arrow buttons change game.convoy_scroll; vehicles run under the arrows."""
@@ -430,7 +447,9 @@ def draw_convoy_vehicles(surface, game, scene, labels=True):
     # scene the rows are pulled up so that the label and bar never leave the scene.
     bar_h = max(3, int(5 * unit))
     bar_y = min(scene.y + int(SCENE_BAR_Y * scene.h), scene.bottom - bar_h - 2)
-    label_y = min(scene.y + int(SCENE_LABEL_Y * scene.h), bar_y - TINY.get_linesize() - 1)
+    nominal_label_y = scene.y + int(SCENE_LABEL_Y * scene.h)
+    label_font = _label_font(surface, vehicles, scaled, gap, scene.h, bar_y - nominal_label_y) if labels else TINY
+    label_y = min(nominal_label_y, bar_y - label_font.get_linesize() - 1)
     baseline = min(scene.y + int(SCENE_BASELINE * scene.h), label_y - 2)   # y where vehicle bodies rest
 
     pix = max(1, round(scale / (COARSE if index else 1)))   # one art pixel on screen: the unit of the bounce and the dust
@@ -459,21 +478,21 @@ def draw_convoy_vehicles(surface, game, scene, labels=True):
         if ACCESS["colorblind"]:   # the bar colour is not the only signal: say the health in words too
             percent = f"{round(health_pct * 100)}%"
             room = spr.get_width() + gap
-            text = next((t for t in (f"{text} {percent}", percent) if TINY.size(t)[0] <= room), percent)
-        draw_scene_label(surface, text, midtop=(cx, label_y))
+            text = next((t for t in (f"{text} {percent}", percent) if label_font.size(t)[0] <= room), percent)
+        draw_scene_label(surface, text, label_font, midtop=(cx, label_y))
         bar_color = GREEN if health_pct >= 0.6 else (YELLOW if health_pct >= 0.3 else RED)
         bar_w = max(10, min(spr.get_width() - 10, 70))
         draw_bar(surface, cx - bar_w // 2, bar_y, bar_w, bar_h, vehicle.health, vehicle.stats["health"], bar_color)
     surface.set_clip(old_clip)
     if scrolling and labels:   # say how many vehicles are completely out of view at each side (the arrows are the buttons)
-        row = label_y + TINY.get_linesize() // 2
+        row = label_y + label_font.get_linesize() // 2
         if left_out:
-            more = _outlined_text(f"{left_out}+")
+            more = _outlined_text(f"{left_out}+", label_font)
             rect = more.get_rect(midleft=(scene.x + 6, row))
             surface.blit(_label_plate(rect.w + 6, rect.h), rect.inflate(6, 0).topleft)
             surface.blit(more, rect)
         if right_out:
-            more = _outlined_text(f"+{right_out}")
+            more = _outlined_text(f"+{right_out}", label_font)
             rect = more.get_rect(midright=(scene.right - 6, row))
             surface.blit(_label_plate(rect.w + 6, rect.h), rect.inflate(6, 0).topleft)
             surface.blit(more, rect)
@@ -655,6 +674,26 @@ def _events_plan(messages, width, height, fonts, max_lines):
     return full or partial or (fonts[-1] if fonts else TINY, [EVENTS_LABEL.strip()])
 
 
+def _wrapped_events(messages, width, height, fonts):
+    """(font, [(line, message number)]) for the wide layout's event log, or None when no font shows the newest message
+    whole. Every message is wrapped to `width` (the newest one after the label); the largest of `fonts` (largest first) in
+    which the newest message fits `height` is used, followed by as many whole older messages as there is room for. This lets
+    a long message use the big font on several lines, where one line would have forced the tiny font."""
+    for font in fonts:
+        room = (height - 8) // (font.get_linesize() + 1)
+        newest = wrap_pixels(EVENTS_LABEL + messages[0] if messages else EVENTS_LABEL.strip(), font, width)
+        if not newest or len(newest) > room or any(font.size(line)[0] > width for line in newest):
+            continue
+        lines = [(line, 0) for line in newest]
+        for number, message in enumerate(messages[1:room + 1], 1):   # every message takes a line at least
+            wrapped = wrap_pixels(message, font, width)
+            if len(lines) + len(wrapped) > room:
+                break
+            lines.extend((line, number) for line in wrapped)
+        return font, lines
+    return None
+
+
 HISTORY_TAG = "HISTORY"
 
 
@@ -681,19 +720,34 @@ def draw_events(surface, game, rect=None, max_lines=None, button=None):
         tag_w = tag_font.size(HISTORY_TAG)[0] + 14
     width = max(20, rect.w - pad * 2 - (tag_w + pad if tag_w else 0))
     messages = [str(message) for message in game.log]
-    font, lines = _events_plan(messages, width, rect.h, fonts, max_lines)
-    step = font.get_linesize() + 1
-    y = rect.y + (max(3, (rect.h - len(lines) * step) // 2) if max_lines else 4)   # centred in the strip
+    wrapped = None if max_lines else _wrapped_events(messages, width, rect.h, fonts)
     x = rect.x + pad
-    for i, line in enumerate(lines):
-        if i == 0:
-            label_w = font.size(EVENTS_LABEL)[0]
-            draw_text(surface, EVENTS_LABEL.rstrip(), x, y, YELLOW, font)
-            if messages:
-                draw_text(surface, fit_text(messages[0], font, width - label_w), x + label_w, y, WHITE, font)
-        else:
-            draw_text(surface, fit_text(line, font, width), x, y, MUTED, font)
-        y += step
+    if wrapped:
+        font, entries = wrapped
+        step = font.get_linesize() + 1
+        y = rect.y + 4
+        label = EVENTS_LABEL.rstrip()
+        for i, (line, number) in enumerate(entries):
+            color = WHITE if number == 0 else MUTED
+            if i == 0 and line.startswith(label):   # the label in yellow, the start of the newest message after it
+                draw_text(surface, label, x, y, YELLOW, font)
+                draw_text(surface, line[len(label):].lstrip(), x + font.size(EVENTS_LABEL)[0], y, color, font)
+            else:
+                draw_text(surface, fit_text(line, font, width), x, y, color, font)
+            y += step
+    else:
+        font, lines = _events_plan(messages, width, rect.h, fonts, max_lines)
+        step = font.get_linesize() + 1
+        y = rect.y + (max(3, (rect.h - len(lines) * step) // 2) if max_lines else 4)   # centred in the strip
+        for i, line in enumerate(lines):
+            if i == 0:
+                label_w = font.size(EVENTS_LABEL)[0]
+                draw_text(surface, EVENTS_LABEL.rstrip(), x, y, YELLOW, font)
+                if messages:
+                    draw_text(surface, fit_text(messages[0], font, width - label_w), x + label_w, y, WHITE, font)
+            else:
+                draw_text(surface, fit_text(line, font, width), x, y, MUTED, font)
+            y += step
 
     if button is not None:
         tag = pygame.Rect(rect.right - pad - tag_w, rect.y + 4, tag_w, min(rect.h - 8, tag_font.get_linesize() + 6))
@@ -703,8 +757,39 @@ def draw_events(surface, game, rect=None, max_lines=None, button=None):
             draw_frame(surface, rect, YELLOW)   # keyboard focus ring (the bar is the button)
 
 
+_INFO_HINTS = (("S: scavenge",), ("R: repair",), ("M: map",), ("V: vehicles",), ("P: survivors",), ("J: missions",),
+               ("H: history",), ("Tab / arrows: move", "Arrows: move", "Tab: move"), ("Enter: select",), ("Esc: menu",))
+
+
+def _info_flow(surface, game, x, y, width, limit, k, site_font, detail_font, hint_font):
+    """The sites of the current stop and the key hints, from `y` down. Draws them when `surface` is given; with None it only
+    measures. Returns the y below the last hint, so the caller can tell whether it all fits above `limit`."""
+    sites = game.current_sites()
+    if not sites:
+        y = draw_paragraph(surface, "Nothing to search here.", x, y, width, MUTED, site_font)
+    else:
+        for site in sites:
+            if surface is not None and y + tpx(18, k) > limit:
+                break
+            if surface is not None:
+                draw_text(surface, fit_text(SITES[site]["name"], site_font, width), x, y, GREEN, site_font)
+            y = draw_paragraph(surface, SITES[site]["detail"], x, y + max(tpx(22, k), site_font.get_linesize() + 4), width,
+                               WHITE, detail_font, limit=limit) + tpx(8, k)
+    y += tpx(6, k)
+    step = max(tpx(18, k), hint_font.get_linesize() + 3)
+    for variants in _INFO_HINTS:
+        if surface is not None and y + tpx(16, k) > limit:
+            break
+        if surface is not None:
+            draw_text(surface, fit_text(fit_variants(hint_font, width, variants), hint_font, width), x, y, MUTED, hint_font)
+        y += step
+    return y
+
+
 def draw_info_panel(surface, game, rect):
-    """Wide layout only: the sites of the current stop (SCAVENGE lets you pick one) and the keys that matter here."""
+    """Wide layout only: the sites of the current stop (SCAVENGE lets you pick one) and the keys that matter here.
+    The text uses the bigger font (16 px with the pixel font) whenever the whole column still fits; otherwise the site
+    descriptions drop to the small font, then the hints too."""
     k = calculate_layout(*surface.get_size())["k"]
     window = surface.get_size()
     tiny, small, body = scaled_font(window, 13), scaled_font(window, 15), scaled_font(window, 19)
@@ -714,27 +799,22 @@ def draw_info_panel(surface, game, rect):
     width = max(20, rect.w - pad * 2)
     limit = rect.bottom - pad
     y = rect.y + pad
-    draw_text(surface, "CURRENT STOP", x, y, YELLOW, tiny)
-    y += tpx(20, k)
-    draw_text(surface, fit_text(game.current_location, body, width), x, y, WHITE, body)
-    y += tpx(34, k)
-    sites = game.current_sites()
-    if not sites:
-        y = draw_paragraph(surface, "Nothing to search here.", x, y, width, MUTED, small)
-    else:
-        for site in sites:
-            if y + tpx(18, k) > limit:
-                break
-            draw_text(surface, fit_text(SITES[site]["name"], small, width), x, y, GREEN, small)
-            y = draw_paragraph(surface, SITES[site]["detail"], x, y + tpx(22, k), width, WHITE, tiny, limit=limit) \
-                + tpx(8, k)
-    y += tpx(6, k)
-    for hint in ("S: scavenge", "R: repair", "M: map", "V: vehicles", "P: survivors", "J: missions", "H: history",
-                 "Tab / arrows: move", "Enter: select", "Esc: menu"):
-        if y + tpx(16, k) > limit:
+    head_font = small if small.size("CURRENT STOP")[0] <= width else tiny
+    draw_text(surface, "CURRENT STOP", x, y, YELLOW, head_font)
+    y += max(tpx(20, k), head_font.get_linesize() + 4)
+    # The stop's name: on up to two lines in the largest font that holds it, instead of being cut with "..." in one.
+    name_fonts = tuple(dict.fromkeys((body, small, tiny)))
+    name_font, name_lines = fit_paragraph(game.current_location, name_fonts, width, 2 * (body.get_linesize() + 2), line_gap=2)
+    name_step = name_font.get_linesize() + 2
+    name_top = y
+    for line in name_lines:
+        draw_text(surface, fit_text(line, name_font, width), x, y, WHITE, name_font)
+        y += name_step
+    y = name_top + max(tpx(34, k), len(name_lines) * name_step + tpx(6, k))
+    for detail_font, hint_font in ((small, small), (tiny, small), (tiny, tiny)):   # the first that fits the column
+        if _info_flow(None, game, x, y, width, limit, k, small, detail_font, hint_font) <= limit:
             break
-        draw_text(surface, hint, x, y, MUTED, tiny)
-        y += tpx(18, k)
+    _info_flow(surface, game, x, y, width, limit, k, small, detail_font, hint_font)
 
 
 def draw_lower(surface, game, buttons, layout=None):

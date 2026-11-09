@@ -65,6 +65,18 @@ CREDITS = [
     ),
 
     (
+        "Font",
+        [
+            "Press Start 2P by CodeMan38",
+            "Copyright 2012 The Press Start 2P",
+            "Project Authors",
+            Link("Licence: SIL OFL 1.1", "https://openfontlicense.org/"),
+            Link("Source: Google Fonts", "https://fonts.google.com/specimen/Press+Start+2P"),
+            "No changes were made to the original font.",
+        ]
+    ),
+
+    (
         "Special thanks",
         ["Earn to Die and Organ Trail"]
     ),
@@ -73,7 +85,7 @@ CREDITS = [
         "Licence notice",
         [
             "Each third-party asset remains subject to its own licence.",
-            "No ownership of third-party music or sound effects is claimed.",
+            "No ownership of third-party music, sound effects or fonts is claimed.",
             "See LICENSES.txt for the full text.",
         ]
     ),
