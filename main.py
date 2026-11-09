@@ -307,6 +307,10 @@ def setup():
     # DPI awareness is switched off for now (_enable_dpi_awareness is kept but not called): it made the window tiny on
     # scaled Windows screens. Windows scales the window itself again, as before v1.66.
     window.initialize_windowed_size(WIDTH, HEIGHT)
+    if IS_WEB:
+        # In the browser the audio is mixed on the same thread as the game, so a slow frame can starve a small buffer
+        # and crackle. A bigger buffer rides those out (a little more delay on sound effects, which is fine here).
+        pygame.mixer.pre_init(44100, -16, 2, 4096)
     pygame.init()
     SCREEN = pygame.display.set_mode(
         (WIDTH, HEIGHT), pygame.RESIZABLE
