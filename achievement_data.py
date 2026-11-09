@@ -59,7 +59,7 @@ ACHIEVEMENTS = (
      "description": "Complete the Heavy Machinery event.",
      "condition": {"kind": "event", "events": ("heavy_machinery",)},
      "unlocks_vehicle": ("Excavator", "Bulldozer",  "Crane Truck", "Wrecking Ball Truck"),
-     "reward": "Unlock the Excavator, Bulldozer, Crane Truck", "Wrecking Ball Truck"},
+     "reward": "Unlock the Excavator, Bulldozer, Crane Truck and Wrecking Ball Truck"},
     {"id": "broadcast_from_the_end", "name": "Broadcast from the End", "secret": False,
      "description": "Complete the television broadcasting event.",
      "condition": {"kind": "event", "events": ("tv_broadcast",)},
