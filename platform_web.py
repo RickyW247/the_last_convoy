@@ -82,11 +82,18 @@ def storage_delete(name):
 
 
 def viewport_size():
-    """The browser page's inner size in CSS pixels as (width, height), or None (not on the web / unreadable)."""
+    """The browser page's inner size in REAL screen pixels as (width, height), or None (not on the web / unreadable).
+
+    The browser reports its size in CSS pixels, which are bigger than screen pixels when the display is scaled (Windows
+    at 150% shows 1920 screen pixels as 1280 CSS pixels). Multiplying by devicePixelRatio gives the real pixels, which is
+    what a whole-number zoom has to be worked out from for the picture to stay sharp."""
     if _window is None:
         return None
     try:
-        width, height = int(_window.innerWidth), int(_window.innerHeight)
+        ratio = float(_window.devicePixelRatio or 1.0)
+        if not 0.5 <= ratio <= 8.0:
+            ratio = 1.0
+        width, height = round(float(_window.innerWidth) * ratio), round(float(_window.innerHeight) * ratio)
     except Exception:
         return None
     return (width, height) if width > 0 and height > 0 else None
