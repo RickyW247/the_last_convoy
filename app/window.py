@@ -6,13 +6,14 @@ import sys
 
 import pygame
 
-from platform_web import IS_WEB, viewport_size
+from platform_web import IS_WEB, stretch_canvas_to_page, viewport_size
 
 
 MIN_SIZE = (640, 480) # the smallest window
 
 WINDOWED_SIZE = None              # the window size to come back to when fullscreen ends
 window_fullscreen = False         # the mode the window is in now (game.fullscreen is the mode that is wanted)
+_web_frames = 0                   # web only: frames seen by fit_web_viewport (re-applies the canvas styles now and then)
 
 
 def enable_dpi_awareness():
@@ -147,14 +148,22 @@ def fit_web_viewport(surface):
     if wanted is None:
         return surface
 
+    global _web_frames
+    _web_frames += 1
+
     wanted = (max(MIN_SIZE[0], wanted[0]), max(MIN_SIZE[1], wanted[1]))
     if surface is not None and tuple(surface.get_size()) == wanted:
+        if _web_frames % 60 == 0:
+            stretch_canvas_to_page()   # the page's own script may restyle the canvas: put it back about once a second
         return surface
 
     try:
-        return pygame.display.set_mode(wanted, pygame.RESIZABLE)
+        surface = pygame.display.set_mode(wanted, pygame.RESIZABLE)
     except pygame.error:
-        return pygame.display.get_surface() or surface
+        surface = pygame.display.get_surface() or surface
+
+    stretch_canvas_to_page()   # the canvas's box on the page follows the new surface size
+    return surface
 
 
 def set_window_mode(surface, fullscreen):

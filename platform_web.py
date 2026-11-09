@@ -92,6 +92,38 @@ def viewport_size():
     return (width, height) if width > 0 and height > 0 else None
 
 
+def stretch_canvas_to_page():
+    """Web only: make the canvas fill the whole browser page, 1 drawing pixel per CSS pixel.
+
+    pygbag's page keeps the canvas in a box of its own (the size of the first surface). When the surface is resized to the
+    viewport, that box must follow, or the picture is squeezed into it. Returns True when the styles were set."""
+    if _window is None:
+        return False
+    try:
+        document = _window.document
+        canvas = document.getElementById("canvas") or getattr(_window, "canvas", None)
+        if canvas is None:
+            return False
+        style = canvas.style
+        style.position = "fixed"
+        style.left = "0px"
+        style.top = "0px"
+        style.width = "100vw"
+        style.height = "100vh"
+        style.margin = "0px"
+        style.padding = "0px"
+        style.border = "0px"
+        style.setProperty("transform", "none")
+        body = document.body
+        body.style.margin = "0px"
+        body.style.padding = "0px"
+        body.style.overflow = "hidden"
+        body.style.background = "#000"
+        return True
+    except Exception:
+        return False
+
+
 def open_url(url):
     """Open a web address in a new browser tab (web only). Returns True when it was asked for."""
     if _window is None or not str(url).startswith(("https://", "http://")):

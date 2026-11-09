@@ -26,7 +26,7 @@ jobs:
           mkdir site
           rsync -a --exclude '.git' --exclude '.github' --exclude 'site' ./ site/
           find site -iname '*.mp3' | while read -r f; do
-            ffmpeg -nostdin -y -loglevel error -i "$f" -c:a libvorbis -q:a 3 "${f%.*}.ogg" || exit 1
+            ffmpeg -nostdin -y -loglevel error -i "$f" -c:a libvorbis -q:a 7 -ar 44100 "${f%.*}.ogg" || exit 1
             rm "$f"
           done
       - name: Build the web version
