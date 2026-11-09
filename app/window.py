@@ -6,7 +6,7 @@ import sys
 
 import pygame
 
-from platform_web import IS_WEB
+from platform_web import IS_WEB, viewport_size
 
 
 MIN_SIZE = (640, 480) # the smallest window
@@ -132,6 +132,29 @@ def open_windowed():
         height = min(height, max(MIN_SIZE[1], desktop[1]))
 
     return pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
+
+def fit_web_viewport(surface):
+    """Browser only: make the drawing surface the same size (and so shape) as the page's viewport.
+
+    pygbag scales the canvas to fit the page while keeping the surface's aspect ratio, so a surface whose shape differs
+    from the page leaves grey bars. Matching the surface to the viewport removes them; the layout code already adapts
+    to any size. Returns the surface to draw on (a new one only when the size changed). No-op on the desktop."""
+    if not IS_WEB:
+        return surface
+
+    wanted = viewport_size()
+    if wanted is None:
+        return surface
+
+    wanted = (max(MIN_SIZE[0], wanted[0]), max(MIN_SIZE[1], wanted[1]))
+    if surface is not None and tuple(surface.get_size()) == wanted:
+        return surface
+
+    try:
+        return pygame.display.set_mode(wanted, pygame.RESIZABLE)
+    except pygame.error:
+        return pygame.display.get_surface() or surface
 
 
 def set_window_mode(surface, fullscreen):

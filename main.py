@@ -1,5 +1,5 @@
 """THE LAST CONVOY — Prototype README
-Version: 2.15
+Version: 2.16
 
 Development / versioning convention:
 - For every update, increment the version number (e.g. 2.0 -> 2.1; the numbering went from 1.99 straight to 2.0).
@@ -153,7 +153,7 @@ Project files:
 - event_data.py / event_manager.py / effect_handler.py: events, selection and effects.   game/background_rules.py: player background rules.   history_log.py: the event history
   (grouping, scroll clamp; layout/history.py and ui/history.py are its screen).   instructions_data.py,
   story_data.py, credits_data.py: text content (edit there).
-- platform_web.py: IS_WEB, localStorage storage and open_url for the browser build.
+- platform_web.py: IS_WEB, localStorage storage, viewport_size and open_url for the browser build.
 - app/window.py: window creation helpers, DPI awareness, fullscreen and windowed-mode management.
 - app/popups.py: popup selection, popup button construction and popup drawing coordination.
 - app/rendering.py: screen drawing coordination; actual drawing remains in ui/.
@@ -166,6 +166,8 @@ Project files:
 Setup: python -m pip install pygame | Run: python main.py | Test: python test_convoy.py
 
 Version history (newest first; older entries are grouped):
+- 2.16: browser build fills the page: the drawing surface follows the browser viewport (platform_web.viewport_size,
+        window.fit_web_viewport, called at start-up and once a frame on the web), so there are no grey bars. Desktop unchanged.
 - 2.15: browser build: async main loop (asyncio.sleep(0) per frame), platform_web.py, localStorage for settings / saves / achievements (settings_store, savegame, achievements),
         touch.py (tap, swipe-to-scroll, long press = fast-forward),
         web branch in window.set_window_mode, no QUIT GAME on the web, credits links open a new tab, .ogg audio fallback, GitHub Pages workflow. Gameplay unchanged.
@@ -308,6 +310,7 @@ def setup():
     SCREEN = pygame.display.set_mode(
         (WIDTH, HEIGHT), pygame.RESIZABLE
     )
+    SCREEN = window.fit_web_viewport(SCREEN)   # browser: start at the page's size, not the default WIDTH x HEIGHT
     pygame.display.set_caption("The Last Convoy — Prototype")
     CLOCK = pygame.time.Clock()
     pygame.key.set_repeat(400, 60)   # holding Tab / an arrow key keeps moving; main() ignores repeats of every other key
@@ -390,6 +393,9 @@ async def main():
             settings_store.set_fullscreen(window.window_fullscreen)
 
         settings_store.set_music_muted(game.music_muted)   # remembers MUTE / UNMUTE MUSIC (writes only when it changed)
+
+        if IS_WEB:
+            SCREEN = window.fit_web_viewport(SCREEN)   # follow the browser page's size (no grey bars)
 
         # Recalculate geometry every frame so everything follows window resizing. The surface is always the one pygame
         # reports for the window (it can be replaced when the OS changes the window), so the picture fills the window.

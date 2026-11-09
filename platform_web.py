@@ -81,6 +81,17 @@ def storage_delete(name):
         return False
 
 
+def viewport_size():
+    """The browser page's inner size in CSS pixels as (width, height), or None (not on the web / unreadable)."""
+    if _window is None:
+        return None
+    try:
+        width, height = int(_window.innerWidth), int(_window.innerHeight)
+    except Exception:
+        return None
+    return (width, height) if width > 0 and height > 0 else None
+
+
 def open_url(url):
     """Open a web address in a new browser tab (web only). Returns True when it was asked for."""
     if _window is None or not str(url).startswith(("https://", "http://")):
