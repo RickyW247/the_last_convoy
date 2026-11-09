@@ -475,6 +475,8 @@ BONUS_VEHICLES = frozenset({
     "Formula 1 Car",
     "Fire Engine",
     "Mobile Command Vehicle",
+    "Utility Service Truck",
+    "Road Maintenance Truck",
 })
 STANDARD_VEHICLES = tuple(name for name in VEHICLE_SPECS if name not in BONUS_VEHICLES)
 

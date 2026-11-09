@@ -10,8 +10,9 @@ progresses on its own, so one survivor can be hungry and injured; the counts nee
 Daily (update_conditions, called from upkeep after the day's food and water are used):
   * not enough food / water for the day -> each survivor may move one stage on (fed -> hungry -> starving), and
     starving / dehydrated survivors may leave. Several can leave on the same day.
-  * enough food / water -> every hungry / starving (thirsty / dehydrated) survivor is back to normal at once,
-    whatever stage they were in.
+  * enough food / water -> nobody gets worse, and hungry / starving (thirsty / dehydrated) survivors recover
+    gradually: each may move one stage back a day (starving -> hungry -> fed), so a neglected convoy stays hungry
+    for a few days after the resupply.
   * injuries never appear on their own: injure() is called by horde attacks and events. Untreated, injured
     survivors can turn critical and critical ones can die; both recover slowly, and faster with a Medical Care
     vehicle (the ambulance). The ambulance does not help hunger or thirst.
@@ -21,7 +22,7 @@ Pygame-free, like the rest of the game package. The rates are in config.py (Surv
 import random
 
 from config import (AMBUSH_INJURY_FRACTION, HORDE_ATTACK_INJURY_FRACTION, INJURY_DEATH_RATE, INJURY_RECOVER_RATE, INJURY_WORSEN_RATE,
-                    MEDICAL_RECOVER_RATE, SHORTAGE_RATES, people)
+                    MEDICAL_RECOVER_RATE, NEED_RECOVER_RATES, SHORTAGE_RATES, people)
 from vehicle_data import VEHICLE_ABILITIES
 
 STAGES = {"hunger": ("hungry", "starving"), "thirst": ("thirsty", "dehydrated"), "injury": ("injured", "critical")}
@@ -107,7 +108,13 @@ class ConditionsMixin:
         mild, severe = STAGES[need]
         c = self.conditions
         if not short:
-            c[mild] = c[severe] = 0          # fed / watered again: back to normal whatever the stage
+            # Fed / watered: no one gets worse, and each survivor may recover one stage (starving -> hungry -> fed).
+            # Both rolls use today's counts, so nobody skips a stage in a single day.
+            rate = NEED_RECOVER_RATES[need]
+            better_severe = _roll(c[severe], rate)
+            better_mild = _roll(c[mild], rate)
+            c[severe] -= better_severe
+            c[mild] += better_severe - better_mild
             return 0
         to_mild_rate, to_severe_rate, leave_rate = SHORTAGE_RATES[need]
         leaving = _roll(c[severe], leave_rate)

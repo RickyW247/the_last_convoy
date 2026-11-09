@@ -15,6 +15,7 @@ WEB_MIN_SIZE = MIN_SIZE      # browser build: the smallest drawing surface the p
 
 WINDOWED_SIZE = None              # the window size to come back to when fullscreen ends
 window_fullscreen = False         # the mode the window is in now (game.fullscreen is the mode that is wanted)
+WEB_WHOLE_ZOOM_ONLY = True        # browser build: only whole-number zoom (sharp text). False: quarter steps (bigger, but blurry)
 _web_frames = 0                   # web only: frames seen by fit_web_viewport (re-applies the canvas styles now and then)
 
 
@@ -161,7 +162,10 @@ def fit_web_viewport(surface):
     # (a windowed browser on a 1080p screen) gets the biggest zoom in quarter steps instead, at least 1; the pixels are then
     # slightly uneven, but everything is bigger. Browser fullscreen (F11) gives the sharp whole-number zoom.
     room = min(wanted[0] / WEB_MIN_SIZE[0], wanted[1] / WEB_MIN_SIZE[1])
-    zoom = int(room) if room >= 2 else max(1.0, int(room * 4) / 4)
+    if WEB_WHOLE_ZOOM_ONLY:
+        zoom = max(1, int(room))   # every art pixel the same size on screen: no resampling blur
+    else:
+        zoom = int(room) if room >= 2 else max(1.0, int(room * 4) / 4)
     wanted = (max(MIN_SIZE[0], round(wanted[0] / zoom)), max(WEB_MIN_SIZE[1], round(wanted[1] / zoom)))
     if surface is not None and tuple(surface.get_size()) == wanted:
         if _web_frames % 60 == 0:
@@ -175,7 +179,7 @@ def fit_web_viewport(surface):
 
     stretch_canvas_to_page()   # the canvas's box on the page follows the new surface size
     try:   # TEMPORARY check of which build is live: the tab title starts with the zoom and the surface size
-        pygame.display.set_caption("[v2.16 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
+        pygame.display.set_caption("[v2.17 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
     except Exception:
         pass
     return surface

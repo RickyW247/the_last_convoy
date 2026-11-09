@@ -288,6 +288,25 @@ SPECIAL_SURVIVORS = {
         "gender": "Male",
         "age": 24,
     },
+    "rhonda_kreske": {
+        "first_name": "Rhonda",
+        "last_name": "Kreske",
+        "gender": "Female",
+        "age": 40,
+    },
+    "dick_baker": {
+        "first_name": "Dick",
+        "last_name": "Baker",
+        "gender": "Male",
+        "age": 35,
+    },
+    # Annie is Katey Greene grown up (Dead Rising 3); the events never put the two aboard together.
+    "annie_greene": {
+        "first_name": "Annie",
+        "last_name": "Greene",
+        "gender": "Female",
+        "age": 17,
+    },
 
     # World War Z (movie and book)
     "gerry_lane": {
@@ -528,6 +547,7 @@ SPECIAL_SERIES = {
         "name": "Dead Rising",
         "members": [
             "frank_west", "chuck_greene", "katey_greene", "nick_ramos",
+            "rhonda_kreske", "dick_baker", "annie_greene",
         ],
     },
     "world_war_z": {

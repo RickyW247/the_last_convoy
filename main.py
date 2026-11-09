@@ -1,5 +1,5 @@
 """THE LAST CONVOY — Prototype README
-Version: 2.16
+Version: 2.17
 
 Development / versioning convention:
 - For every update, increment the version number (e.g. 2.0 -> 2.1; the numbering went from 1.99 straight to 2.0).
@@ -113,6 +113,8 @@ Current capabilities:
   localStorage (settings and saves persist there); no QUIT GAME on the web; .mp3 music / sounds are played as .ogg (tools/convert_audio.py).
   Touch (touch.py): a tap is a click (held back until the finger lifts); a swipe becomes mouse-wheel scrolling / page turning, so it never
   presses a button; a long press while travelling fast-forwards (like SPACE). HOSTING.md explains the .github/workflows/pages.yml deployment.
+  Closing the tab: the browser's "Leave site?" dialog freezes the page and made the music crackle, so the audio is suspended while it is
+  open and resumed if the player stays (platform_web.install_leave_guard, called by setup()).
 - Pixel-art PNG assets in assets/; hand cursor over every enabled button, map stop and vehicle-table row; headless tests (test_convoy.py, test_layouts.py).
 - Pixel-art UI: panels, buttons, bars and focus rings are square with stepped corners, a dark outline and a bevel
   (widgets.draw_panel / draw_frame, PIX = 2 px); text is drawn without smoothing (theme.PIXEL_TEXT) and uses
@@ -153,7 +155,7 @@ Project files:
 - event_data.py / event_manager.py / effect_handler.py: events, selection and effects.   game/background_rules.py: player background rules.   history_log.py: the event history
   (grouping, scroll clamp; layout/history.py and ui/history.py are its screen).   instructions_data.py,
   story_data.py, credits_data.py: text content (edit there).
-- platform_web.py: IS_WEB, localStorage storage, viewport_size and open_url for the browser build.
+- platform_web.py: IS_WEB, localStorage storage, viewport_size, fullscreen, open_url and the leave-site audio guard for the browser build.
 - app/window.py: window creation helpers, DPI awareness, fullscreen and windowed-mode management.
 - app/popups.py: popup selection, popup button construction and popup drawing coordination.
 - app/rendering.py: screen drawing coordination; actual drawing remains in ui/.
@@ -166,12 +168,14 @@ Project files:
 Setup: python -m pip install pygame | Run: python main.py | Test: python test_convoy.py
 
 Version history (newest first; older entries are grouped):
-- 2.16: browser build fills the page (browser fullscreen on F11 / the FULLSCREEN setting via platform_web.set_browser_fullscreen; convoy vehicles drawn 1.5x bigger: ui/convoy.VEHICLE_SCENE_H 80 -> 120): the drawing surface follows the browser viewport (platform_web.viewport_size,
-        window.fit_web_viewport, called at start-up and once a frame on the web) and the canvas is stretched to the page
-        (platform_web.stretch_canvas_to_page, nearest-neighbour; whole-number zoom, window.WEB_MIN_SIZE), so there are no grey bars and no squashing. Desktop unchanged.
-- 2.15: browser build: async main loop (asyncio.sleep(0) per frame), platform_web.py, localStorage for settings / saves / achievements (settings_store, savegame, achievements),
-        touch.py (tap, swipe-to-scroll, long press = fast-forward),
-        web branch in window.set_window_mode, no QUIT GAME on the web, credits links open a new tab, .ogg audio fallback, GitHub Pages workflow. Gameplay unchanged.
+- 2.17: browser build: closing the tab no longer makes the music crackle. Chrome's "Leave site?" dialog blocks the page's main thread, which also
+        mixes the audio; platform_web.install_leave_guard (called once in setup(), web only) suspends the audio context on beforeunload and
+        resumes it if the player stays. Window caption check now says v2.17. Gameplay unchanged.
+- 2.16: browser build fills the page: the drawing surface follows the viewport (window.fit_web_viewport, platform_web.viewport_size,
+        stretch_canvas_to_page; whole-number zoom, nearest-neighbour), browser fullscreen on F11 / FULLSCREEN (platform_web.set_browser_fullscreen);
+        convoy vehicles drawn 1.5x bigger (ui/convoy.VEHICLE_SCENE_H 80 -> 120). Desktop unchanged.
+- 2.15: browser build: async main loop, platform_web.py, localStorage for settings / saves / achievements, touch.py (tap, swipe-to-scroll,
+        long press = fast-forward), web branch in window.set_window_mode, no QUIT GAME on the web, .ogg audio fallback, GitHub Pages workflow.
 - 2.14: background zombies no longer vanish before the scene's right edge on a widened scene: every repeat of the looping strip
         that fits the scene gets its zombies (ui/convoy.draw_background_zombies).
 - 2.13: vehicles can be scavenged: a search may turn up an abandoned vehicle that fits the site (map_data.SITE_VEHICLES: police cars at the Police
@@ -257,7 +261,7 @@ import asyncio   # the browser (pygbag) needs an async main loop that yields onc
 
 import pygame
 
-from platform_web import IS_WEB, fullscreen_state
+from platform_web import IS_WEB, fullscreen_state, install_leave_guard
 import touch
 from config import TRAVEL_ANIMATION_FAST_FORWARD, TRAVEL_FAST_FORWARD
 from credits_items import reset_credits_page, turn_credits_page
@@ -312,6 +316,8 @@ def setup():
         # and crackle. A bigger buffer rides those out (a little more delay on sound effects, which is fine here).
         pygame.mixer.pre_init(44100, -16, 2, 4096)
     pygame.init()
+    if IS_WEB:
+        install_leave_guard()   # the "Leave site?" dialog freezes the page: silence the audio while it is open
     SCREEN = pygame.display.set_mode(
         (WIDTH, HEIGHT), pygame.RESIZABLE
     )

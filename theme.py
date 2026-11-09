@@ -109,24 +109,44 @@ MONO_FONTS = "consolas,dejavusansmono,menlo,liberationmono,couriernew"
 
 
 # Pixel-art look. PIXEL_TEXT draws text without smoothing (hard-edged letters). If a pixel font file exists at
-# assets/fonts/pixel.ttf (for example Silkscreen, Pixelify Sans or Press Start 2P: any .ttf, drop it in and rename it) every
-# size uses it; otherwise the monospace system font is used, un-smoothed. Set PIXEL_TEXT = False for smooth text again.
-PIXEL_TEXT = True
+# assets/fonts/pixel.ttf (Press Start 2P) every size uses it; otherwise the monospace system font is used, un-smoothed.
+# Set textscale.PIXEL_TEXT = False for smooth text again.
+#
+# Press Start 2P is drawn from an 8 px grid, and without smoothing it is only clean at 8, 16, 24, 32 ... px (whole
+# multiples of 8; see textscale.py). So the pixel font is never asked for another size: _mono(size) draws a "logical" size
+# (the sizes the layout works with, textscale.TEXT_PX) at the clean size textscale.pixel_font_px gives for it.
+PIXEL_TEXT = textscale.PIXEL_TEXT
 ANTIALIAS = not PIXEL_TEXT   # widgets.text_surface and the other render() calls use this
-PIXEL_FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fonts", "pixel.ttf")
+PIXEL_FONT_PATH = textscale.PIXEL_FONT_PATH
+
+_FONT_CACHE = {}
 
 
 def _mono(size, bold=False):
-    if PIXEL_TEXT and os.path.isfile(PIXEL_FONT_PATH):
-        try:
-            return pygame.font.Font(PIXEL_FONT_PATH, size)   # a pixel font has no bold: the heading sizes are just larger
-        except (pygame.error, OSError):
-            pass   # an unreadable font file: fall back to the system font
-    return pygame.font.SysFont(MONO_FONTS, size, bold=bold)
+    """The monospace font for a logical `size`. With the pixel font: the clean size for it (8 / 16 / 24 / 32 / 40), no bold (a pixel
+    font has none: the heading sizes are just larger). Fonts are cached, so sizes that share a clean size share a font."""
+    if textscale.USE_PIXEL_FONT:
+        shown, bold = textscale.pixel_font_px(size), False
+    else:
+        shown = size
+    key = (shown, bold)
+    font = _FONT_CACHE.get(key)
+    if font is None:
+        if textscale.USE_PIXEL_FONT:
+            try:
+                font = pygame.font.Font(PIXEL_FONT_PATH, shown)
+            except (pygame.error, OSError):
+                font = None   # an unreadable font file: fall back to the system font at the logical size
+        if font is None:
+            font = pygame.font.SysFont(MONO_FONTS, size, bold=bold)
+        _FONT_CACHE[key] = font
+    return font
 
 
 # Every size is created once here and never scaled: screens pick the largest one that fits their space
 # (widgets.pick_font), so text stays sharp at any window size.
+# With the pixel font these names map to: TINY, SMALL = 8 px; MEDIUM, FONT, LARGE, LARGER = 16 px; TITLE, XLARGE = 24 px;
+# BIG, XXLARGE = 32 px; HUGE = 40 px.
 FONT = _mono(19)
 SMALL = _mono(15)
 TINY = _mono(13)
@@ -137,20 +157,33 @@ MEDIUM = _mono(17)
 LARGE = _mono(23)
 HUGE = _mono(44, bold=True)
 
-# Bigger sizes for big windows (1.27). TEXT_SIZES lists (pixel size, font) from the smallest up; widgets.scaled_font /
-# text_ladder choose from it by window size (15 px text in the default 1000 x 680 window, larger above that).
+# Bigger sizes for big windows (1.27).
 LARGER = _mono(26)
 XLARGE = _mono(30)
 XXLARGE = _mono(36)
-TEXT_SIZES = ((13, TINY), (15, SMALL), (17, MEDIUM), (19, FONT), (23, LARGE), (26, LARGER), (30, XLARGE),
-              (36, XXLARGE))
+
+# TEXT_SIZES lists (logical pixel size, font) from the smallest up; widgets.scaled_font / text_ladder choose from it by
+# window size (15 px text in the default 1000 x 680 window, larger above that). The logical sizes are textscale.TEXT_PX
+# (the sizes the layout scales its rows by); with the pixel font several of them share one clean font.
+TEXT_SIZES = tuple((px, _mono(px)) for px in textscale.TEXT_PX)
 # textscale.TEXT_PX (which text_k / text_px snap to) must list exactly the sizes cached here, or a snapped size would
 # have no cached font. Fail loudly at import if one list is changed without the other.
 if tuple(px for px, _font in TEXT_SIZES) != textscale.TEXT_PX:
     raise ValueError(f"theme.TEXT_SIZES {tuple(px for px, _font in TEXT_SIZES)} and textscale.TEXT_PX "
                      f"{textscale.TEXT_PX} must list the same pixel sizes")
-TEXT_FONTS = tuple(font for _px, font in reversed(TEXT_SIZES))   # largest first, for pick_font / fit_paragraph
+
+
+def _distinct_largest_first(fonts):
+    """`fonts` without repeats (the same font object), order kept."""
+    seen = []
+    for font in fonts:
+        if not any(font is other for other in seen):
+            seen.append(font)
+    return tuple(seen)
+
+
+TEXT_FONTS = _distinct_largest_first(font for _px, font in reversed(TEXT_SIZES))   # largest first, for pick_font / fit_paragraph
 
 # Font ladders, largest first, for pick_font.
-BODY_FONTS = (LARGE, FONT, MEDIUM, SMALL, TINY)
-HEAD_FONTS = (HUGE, BIG, TITLE, FONT, SMALL)
+BODY_FONTS = _distinct_largest_first((LARGE, FONT, MEDIUM, SMALL, TINY))
+HEAD_FONTS = _distinct_largest_first((HUGE, BIG, TITLE, FONT, SMALL))

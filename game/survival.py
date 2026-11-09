@@ -42,7 +42,8 @@ class SurvivalMixin:
 
         Each day the daily use (daily_use) comes off. A day is short when the stock cannot feed everyone; then, in the
         worst case, every survivor moves one stage on (fed -> hungry -> starving) and every starving / dehydrated
-        survivor leaves. A day with enough supplies puts everyone back to normal. Fewer adults than vehicles then
+        survivor leaves. A day with enough supplies lets people recover only gradually, so the worst case assumes
+        nobody recovers and the counts stay as they are. Fewer adults than vehicles then
         loses vehicles: this assumes the worst, that every survivor who leaves is an adult. `extra_vehicles` counts a
         vehicle about to be added. Supplies found on the way, events and horde attacks are not foreseen.
 
@@ -64,8 +65,7 @@ class SurvivalMixin:
             leaving = 0
             for name, counts in stage.items():
                 if not short[name]:
-                    counts[:] = [0, 0]
-                    continue
+                    continue   # enough supplies: no one gets worse (worst case: no one recovers either, see above)
                 empty.add(name)
                 mild, severe = counts
                 leaving += severe

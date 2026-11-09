@@ -81,9 +81,13 @@ SURVIVORS_PER_WATER = 4
 
 # ---- Survivor conditions (game/conditions.py) ----
 # A day without enough food or water, per survivor: (fed -> hungry, hungry -> starving, starving -> leaves the convoy),
-# and the same for thirst. Enough supplies put everyone back to normal at once. Not scaled by difficulty (the difficulty
-# already changes how fast supplies run out through "consumption").
+# and the same for thirst. Not scaled by difficulty (the difficulty already changes how fast supplies run out through
+# "consumption").
 SHORTAGE_RATES = {"hunger": (0.50, 0.40, 0.20), "thirst": (0.70, 0.50, 0.30)}
+# Recovery on a day with enough food / water, chance per survivor: starving -> hungry and hungry -> fed (one stage a day
+# at most), and the same for thirst. Recovery takes days, so early help is worth more (design doc 12.3). Thirst is the
+# faster to deteriorate (see above) and also the faster to cure. Higher = quicker recovery.
+NEED_RECOVER_RATES = {"hunger": 0.30, "thirst": 0.45}
 # Injuries (chance per survivor per day): injured -> critical, critical -> dies, and the recovery steps critical ->
 # injured -> healthy, which is faster with a Medical Care vehicle (the ambulance).
 INJURY_WORSEN_RATE = 0.10

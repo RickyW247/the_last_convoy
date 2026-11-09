@@ -177,3 +177,47 @@ def open_url(url):
         return True
     except Exception:
         return False
+
+
+# Chrome's "Leave site?" dialog (shown when the page has a beforeunload handler) is modal and blocks the page's main thread.
+# The browser build mixes its audio on that same thread, so while the dialog is open the audio buffer starves and the music
+# crackles. The script below suspends the audio context just before the dialog appears and resumes it if the player stays.
+_LEAVE_GUARD_JS = """
+(function () {
+  if (window.__convoyLeaveGuard) return;
+  window.__convoyLeaveGuard = true;
+  function audioCtx() {
+    try {
+      if (window.Module && Module.SDL2 && Module.SDL2.audioContext) return Module.SDL2.audioContext;
+      if (window.SDL && SDL.audioContext) return SDL.audioContext;   // older Emscripten SDL
+    } catch (e) {}
+    return null;
+  }
+  window.addEventListener('beforeunload', function () {
+    var ctx = audioCtx();
+    if (!ctx) return;
+    try { ctx.suspend(); } catch (e) {}
+    // Timers are frozen while the confirm dialog is open, so this only runs if the player stays on the page.
+    setTimeout(function () { try { ctx.resume(); } catch (e) {} }, 0);
+  });
+  // Safety net in case the timer resume did not take.
+  ['pointerdown', 'keydown', 'focus'].forEach(function (ev) {
+    window.addEventListener(ev, function () {
+      var ctx = audioCtx();
+      if (ctx && ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+    });
+  });
+})();
+"""
+
+
+def install_leave_guard():
+    """Web only: silence the audio while the browser's 'Leave site?' dialog blocks the page; resume it if the player stays.
+    Call once at start-up. Returns True when the script was installed (False on the desktop or if the page refused it)."""
+    if _window is None:
+        return False
+    try:
+        _window.eval(_LEAVE_GUARD_JS)
+        return True
+    except Exception:
+        return False

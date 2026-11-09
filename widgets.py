@@ -6,7 +6,7 @@ a small bounded cache (text_surface), so the same string is not rendered again e
 """
 import pygame
 
-from textscale import text_k, text_px
+from textscale import LADDER_BASE, text_k, text_px
 from theme import (ACCESS, ANTIALIAS, BLUE, BORDER, DARK, DISABLED_BG, DISABLED_TEXT, FONT, PANEL_LIGHT, SMALL,
                    TEXT_FONTS, TEXT_SIZES, TINY, TITLE, WHITE, YELLOW)
 
@@ -148,9 +148,11 @@ def scaled_font(size, base=15):
     return best
 
 
-def text_ladder(size, base=15):
+def text_ladder(size, base=LADDER_BASE):
     """The fonts a screen or popup may choose from in a window of this size, largest first: scaled_font(size) and
-    every smaller one. Use it wherever "the largest font that fits" is picked, so text grows with the window."""
+    every smaller one. Use it wherever "the largest font that fits" is picked, so text grows with the window.
+    `base` is 15 with the system font; with the pixel font it is 17, so that its 16 px size is in the ladder (it is the
+    next clean size above 8 px, see textscale.py)."""
     cap = scaled_font(size, base).get_linesize()
     return tuple(font for font in TEXT_FONTS if font.get_linesize() <= cap)
 

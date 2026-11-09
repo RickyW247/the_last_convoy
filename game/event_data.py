@@ -141,11 +141,26 @@ EVACUATION EVENTS ("trigger": "evacuation"; the final scripted sequence at the P
 - evac_gate: The port gate: pay the garrison, show the ambulance (extra berths), ram the wall, or talk your way in.
 - evac_quota: The harbour master's quota: trade supplies, clear the ramp, hand over a vehicle (extra berths) or accept the quota.
 - evac_boarding: Loading under fire: hold the gate, lure the horde with fuel, barricade with scrap, or run for the gangway.
-SPECIAL SURVIVOR EVENTS (special_event_data.py, weight 0.2; one per series in survivor_data.SPECIAL_SERIES, built on its plot)
-- special_walking_dead: Rick Grimes; special_walking_dead_telltale: Lee Everett and Clementine; special_last_of_us: Joel Miller
-  and Ellie Williams; special_resident_evil: Claire Redfield; special_shaun_of_the_dead: Shaun Riley; special_zombieland:
-  Tallahassee and Columbus; special_dead_rising: Frank West; special_world_war_z: Gerry Lane (or the whole Lane family);
-  special_dying_light: Kyle Crane; special_warm_bodies: Julie and Romeo Grigio; special_i_am_legend: Robert Neville (and Anna and Ethan).
+SPECIAL SURVIVOR EVENTS (special_event_data.py, weight 0.2 each; every fictional special survivor in
+survivor_data.SPECIAL_SURVIVORS is brought by at least one event, built on the plot of their series; the best-known
+characters have their own event, the lesser-known ones arrive together with a better-known one or with each other)
+- The Walking Dead: special_walking_dead (Rick), special_twd_daryl (Daryl, with his chopper), special_twd_michonne,
+  special_twd_carol, special_twd_glenn, special_twd_negan, special_twd_greene_farm (Hershel, Maggie and Carl).
+- The Walking Dead (Telltale): special_walking_dead_telltale (Lee and Clementine), special_telltale_kenny (the Russell
+  family, with a Station Wagon), special_telltale_motor_inn (Larry, Lilly and Ben).
+- The Last of Us: special_last_of_us (Joel and Ellie), special_last_of_us_sarah.
+- Resident Evil: special_resident_evil (Claire, with her motorcycle), special_re_leon_ashley, special_re_jill_carlos,
+  special_re_chris_rebecca, special_re_ada, special_re_grace (Grace and Sherry).
+- Zombieland: special_zombieland (Tallahassee and Columbus, with an SUV), special_zombieland_sisters (Wichita and Little Rock).
+- Dead Rising: special_dead_rising (Frank), special_dead_rising_chuck (Chuck, Katey and Nick).
+- World War Z: special_world_war_z (Gerry, or the whole Lane family), special_world_war_z_sean.
+- Dying Light: special_dying_light (Kyle), special_dying_light_aldemirs (Jade, Rahim, Allen and Amir),
+  special_dying_light_brecken_zere (Harris and Imran).
+- Warm Bodies: special_warm_bodies (Julie and Romeo), special_warm_bodies_perry_nora (Perry, Nora and the Colonel),
+  special_warm_bodies_marcus.
+- Others: special_shaun_of_the_dead (Shaun), special_i_am_legend (Robert Neville, and Anna and Ethan).
+- Not scripted yet: the two real-life entries (donald_trump, elon_musk). special_event_data.uncovered_special_survivors()
+  lists whoever has no event, so a test can assert it returns only those two.
 VERY RARE VEHICLE EVENTS (weight 0.3)
 - rare_intact_vehicle: [spare driver, unowned type] Patch up an intact vehicle and take it, strip it, or leave it.
 - rare_stranded_driver: [spare driver, unowned type] A dying driver gives you their vehicle for company and supplies.
