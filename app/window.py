@@ -6,12 +6,12 @@ import sys
 
 import pygame
 
-from platform_web import IS_WEB, stretch_canvas_to_page, viewport_size
+from platform_web import IS_WEB, set_browser_fullscreen, stretch_canvas_to_page, viewport_size
 
 
 MIN_SIZE = (640, 480) # the smallest window
-WEB_MIN_SIZE = (640, 432)    # browser build: the smallest drawing surface the page may zoom (whole numbers only) down to;
-                             # lower = bigger text and sprites on screen, higher = more room per screen
+WEB_MIN_SIZE = MIN_SIZE      # browser build: the smallest drawing surface the page may zoom down to. Not below MIN_SIZE: the
+                             # layouts never go below it (calculate_layout clamps), so a smaller surface cuts the screen off
 
 WINDOWED_SIZE = None              # the window size to come back to when fullscreen ends
 window_fullscreen = False         # the mode the window is in now (game.fullscreen is the mode that is wanted)
@@ -156,9 +156,12 @@ def fit_web_viewport(surface):
     # A big browser window (1920 x 1080 and more) would make the text and sprites look tiny and every frame slow to draw.
     # So the game draws on a smaller surface, `zoom` times smaller than the page, and the browser scales the canvas up to
     # fill the page (stretch_canvas_to_page, nearest-neighbour so the pixel art and text stay sharp). The zoom aims at a
-    # surface that is a WHOLE number of times smaller than the page (a fractional zoom makes some pixels wider than others,
-    # which wrecks small pixel text): the biggest whole zoom that keeps the surface at least WEB_MIN_SIZE.
-    zoom = max(1, int(min(wanted[0] / WEB_MIN_SIZE[0], wanted[1] / WEB_MIN_SIZE[1])))
+    # surface that is a WHOLE number of times smaller than the page when the page is big enough for 2x or more (every pixel
+    # the same size: sharp), the biggest whole zoom that keeps the surface at least WEB_MIN_SIZE. A page too short for 2x
+    # (a windowed browser on a 1080p screen) gets the biggest zoom in quarter steps instead, at least 1; the pixels are then
+    # slightly uneven, but everything is bigger. Browser fullscreen (F11) gives the sharp whole-number zoom.
+    room = min(wanted[0] / WEB_MIN_SIZE[0], wanted[1] / WEB_MIN_SIZE[1])
+    zoom = int(room) if room >= 2 else max(1.0, int(room * 4) / 4)
     wanted = (max(MIN_SIZE[0], round(wanted[0] / zoom)), max(WEB_MIN_SIZE[1], round(wanted[1] / zoom)))
     if surface is not None and tuple(surface.get_size()) == wanted:
         if _web_frames % 60 == 0:
@@ -172,7 +175,7 @@ def fit_web_viewport(surface):
 
     stretch_canvas_to_page()   # the canvas's box on the page follows the new surface size
     try:   # TEMPORARY check of which build is live: the tab title starts with the zoom and the surface size
-        pygame.display.set_caption("[v2.16 %dx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
+        pygame.display.set_caption("[v2.16 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
     except Exception:
         pass
     return surface
@@ -186,13 +189,13 @@ def set_window_mode(surface, fullscreen):
         return surface, window_fullscreen
 
     if IS_WEB:
-        # In the browser the canvas is already sized by the page; fullscreen is the browser's own, asked for with
-        # toggle_fullscreen (it may need a user gesture, so a failure just leaves the mode as it was).
-        try:
-            pygame.display.toggle_fullscreen()
+        # In the browser the canvas is already sized by the page; fullscreen is the browser's own Fullscreen API, asked for
+        # through the page (pygame's toggle_fullscreen does nothing in pygbag, and the game window swallows the real F11).
+        # It needs a recent click or key press, which the click on FULLSCREEN or the F11 press that got us here counts as;
+        # main.py follows the browser's real state afterwards (platform_web.fullscreen_state), so a refusal or the player
+        # leaving with ESC puts the setting right again.
+        if set_browser_fullscreen(fullscreen):
             window_fullscreen = fullscreen
-        except Exception:
-            pass
         return pygame.display.get_surface() or surface, window_fullscreen
 
     try:

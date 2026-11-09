@@ -191,7 +191,8 @@ DUST_GAP = 0.2        # share of the puffs that are skipped in a given round, so
 DUST_COLORS = ((196, 177, 142), (176, 158, 126), (150, 134, 108))   # light, medium and dark dust, picked per puff
 DUST_ALPHA = 200      # opacity of a fresh puff (0-255, varies a little per puff); it fades out as the puff ages
 DUST_MAX_SIDE = 3     # the biggest a puff gets, in art pixels (most stay 1 or 2: fine dust)
-VEHICLE_SCENE_H = 80  # height of the tallest vehicle type on the 270 px reference scene (a zombie is about 42 there)
+VEHICLE_SCENE_H = 120  # height of the tallest vehicle type on the 270 px reference scene (a zombie is about 42 there);
+                       # it was 80, which left the convoy small (about 30% of the scene): raise / lower it to taste
 # A text size above Normal makes the HUD and the panels below taller, so the scene gets shorter and the vehicles, sized
 # from the scene height, shrank with it. With such a setting the tallest vehicle is never smaller than this share of the
 # scene height (or its normal VEHICLE_SCENE_H pixels, if that is less): the vehicles keep about their normal size while

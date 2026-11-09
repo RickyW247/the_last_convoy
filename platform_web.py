@@ -132,6 +132,42 @@ def stretch_canvas_to_page():
         return False
 
 
+_fullscreen_asked_at = None   # time.time() of the last fullscreen request: the browser takes a moment to answer
+
+
+def fullscreen_state():
+    """True / False: whether the browser page is really fullscreen now. None when that cannot be told (not on the web), or
+    for a moment after a request, while the browser has not answered yet (so the answer is not mistaken for a refusal)."""
+    if _window is None:
+        return None
+    import time
+    if _fullscreen_asked_at is not None and time.time() - _fullscreen_asked_at < 1.5:
+        return None
+    try:
+        return _window.document.fullscreenElement is not None
+    except Exception:
+        return None
+
+
+def set_browser_fullscreen(on):
+    """Ask the browser to make the page fullscreen (on=True) or to leave fullscreen (on=False). Returns True when the request
+    was made; the browser may still refuse it (it wants a recent click or key press), see fullscreen_state."""
+    global _fullscreen_asked_at
+    if _window is None:
+        return False
+    try:
+        document = _window.document
+        if on:
+            document.documentElement.requestFullscreen()
+        elif document.fullscreenElement is not None:
+            document.exitFullscreen()
+    except Exception:
+        return False
+    import time
+    _fullscreen_asked_at = time.time()
+    return True
+
+
 def open_url(url):
     """Open a web address in a new browser tab (web only). Returns True when it was asked for."""
     if _window is None or not str(url).startswith(("https://", "http://")):

@@ -166,7 +166,7 @@ Project files:
 Setup: python -m pip install pygame | Run: python main.py | Test: python test_convoy.py
 
 Version history (newest first; older entries are grouped):
-- 2.16: browser build fills the page: the drawing surface follows the browser viewport (platform_web.viewport_size,
+- 2.16: browser build fills the page (browser fullscreen on F11 / the FULLSCREEN setting via platform_web.set_browser_fullscreen; convoy vehicles drawn 1.5x bigger: ui/convoy.VEHICLE_SCENE_H 80 -> 120): the drawing surface follows the browser viewport (platform_web.viewport_size,
         window.fit_web_viewport, called at start-up and once a frame on the web) and the canvas is stretched to the page
         (platform_web.stretch_canvas_to_page, nearest-neighbour; whole-number zoom, window.WEB_MIN_SIZE), so there are no grey bars and no squashing. Desktop unchanged.
 - 2.15: browser build: async main loop (asyncio.sleep(0) per frame), platform_web.py, localStorage for settings / saves / achievements (settings_store, savegame, achievements),
@@ -257,7 +257,7 @@ import asyncio   # the browser (pygbag) needs an async main loop that yields onc
 
 import pygame
 
-from platform_web import IS_WEB
+from platform_web import IS_WEB, fullscreen_state
 import touch
 from config import TRAVEL_ANIMATION_FAST_FORWARD, TRAVEL_FAST_FORWARD
 from credits_items import reset_credits_page, turn_credits_page
@@ -401,6 +401,9 @@ async def main():
 
         if IS_WEB:
             SCREEN = window.fit_web_viewport(SCREEN)   # follow the browser page's size (no grey bars)
+            real = fullscreen_state()                  # the browser's own fullscreen (F11 / FULLSCREEN setting / ESC)
+            if real is not None and real != window.window_fullscreen:
+                window.window_fullscreen = game.fullscreen = real
 
         # Recalculate geometry every frame so everything follows window resizing. The surface is always the one pygame
         # reports for the window (it can be replaced when the OS changes the window), so the picture fills the window.
