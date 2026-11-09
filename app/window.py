@@ -10,6 +10,7 @@ from platform_web import IS_WEB, stretch_canvas_to_page, viewport_size
 
 
 MIN_SIZE = (640, 480) # the smallest window
+WEB_MAX_SIZE = (1280, 720)   # browser build: the largest drawing surface (the page scales it up to fill the window)
 
 WINDOWED_SIZE = None              # the window size to come back to when fullscreen ends
 window_fullscreen = False         # the mode the window is in now (game.fullscreen is the mode that is wanted)
@@ -136,7 +137,7 @@ def open_windowed():
 
 
 def fit_web_viewport(surface):
-    """Browser only: make the drawing surface the same size (and so shape) as the page's viewport.
+    """Browser only: make the drawing surface the same shape as the page's viewport (capped at WEB_MAX_SIZE).
 
     pygbag scales the canvas to fit the page while keeping the surface's aspect ratio, so a surface whose shape differs
     from the page leaves grey bars. Matching the surface to the viewport removes them; the layout code already adapts
@@ -151,7 +152,12 @@ def fit_web_viewport(surface):
     global _web_frames
     _web_frames += 1
 
-    wanted = (max(MIN_SIZE[0], wanted[0]), max(MIN_SIZE[1], wanted[1]))
+    # A big browser window (1920 x 1080 and more) would make the text and sprites look tiny and every frame slow to draw.
+    # So the surface is capped at WEB_MAX_SIZE, keeping the page's shape, and the browser scales the canvas up to fill
+    # the page (stretch_canvas_to_page). A smaller cap = bigger-looking everything.
+    scale = min(1.0, WEB_MAX_SIZE[0] / wanted[0], WEB_MAX_SIZE[1] / wanted[1])
+    scale = max(scale, MIN_SIZE[0] / wanted[0], MIN_SIZE[1] / wanted[1])   # never below the minimum window size
+    wanted = (max(MIN_SIZE[0], round(wanted[0] * scale)), max(MIN_SIZE[1], round(wanted[1] * scale)))
     if surface is not None and tuple(surface.get_size()) == wanted:
         if _web_frames % 60 == 0:
             stretch_canvas_to_page()   # the page's own script may restyle the canvas: put it back about once a second
