@@ -114,6 +114,7 @@ def stretch_canvas_to_page():
         style.padding = "0px"
         style.border = "0px"
         style.setProperty("transform", "none")
+        style.setProperty("image-rendering", "pixelated")   # scale up with sharp pixels, not a blurry smooth stretch
         body = document.body
         body.style.margin = "0px"
         body.style.padding = "0px"
