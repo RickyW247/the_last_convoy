@@ -21,7 +21,6 @@ from theme import (
 )
 from theme import ANTIALIAS
 from textscale import text_k, tpx
-from platform_web import IS_WEB
 from widgets import (
     draw_bar, draw_heading, draw_lines, draw_text, fit_paragraph, fit_text, fit_variants, pick_font, scaled_font,
     screen_fonts, text_in_rect, text_ladder, wrap_pixels,
@@ -363,17 +362,16 @@ def draw_lore_screen(surface, game, buttons):
     draw_panel(surface, g["panel"], PANEL, 1)
     draw_heading(surface, story.LORE_TITLE, g["heading"], YELLOW, None, "center")
     rect = pygame.Rect(g["text"])
-    # Desktop build: the story may use the 24 px font (and a wider, airier column) when the window has room for it; the browser
-    # build keeps its 16 px / 820 text.
-    big = None if IS_WEB else scaled_font(size, 26)
-    width = min(rect.w, tpx(1300 if big is not None and big is not body else 820, k))
+    # The story may use the 24 px font (and a wider, airier column) when the window has room for it.
+    big = scaled_font(size, 26)
+    width = min(rect.w, tpx(1300 if big is not body else 820, k))
     x = rect.x + (rect.w - width) // 2
     paragraphs = [" ".join(p.split()) for p in story.LORE]   # whitespace-normalised, as Game.lore_revealed counts them
     font, gap = tiny, tpx(10, k)
     fonts = [(body, tpx(18, k)), (small, tpx(14, k)), (tiny, tpx(10, k))]
-    if big is not None and big is not body:
+    if big is not body:
         fonts.insert(0, (big, tpx(22, k)))
-    spacing = 2 if IS_WEB else max(2, tpx(6, k))   # extra pixels between the lines (desktop: a little airier)
+    spacing = max(2, tpx(6, k))   # extra pixels between the lines
     for font, gap in fonts:   # the largest font in which the story fits
         step = font.get_linesize() + spacing
         bottom = rect.y + sum(len(wrap_pixels(p, font, width)) * step + gap for p in paragraphs)

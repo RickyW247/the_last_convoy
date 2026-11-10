@@ -6,7 +6,6 @@ import pygame
 from background_icons import get_icon
 from background_data import BACKGROUNDS, BACKGROUND_ORDER, PLACEHOLDER_NOTE
 from layout.backgrounds import background_layout
-from platform_web import IS_WEB
 from textscale import tpx
 from theme import GREEN, MUTED, PANEL, WHITE, YELLOW
 from widgets import (PIX, draw_frame, draw_heading, draw_panel, draw_text, fit_text, scaled_font, screen_fonts,
@@ -34,12 +33,10 @@ def draw_background_screen(surface, game, buttons):
     body, small = scaled_font(size, 19), scaled_font(size, 15)
     tiny = small
     k = g["k"]
-    # Desktop build: more room between the lines, the labels and the sections (the browser build keeps its compact text).
-    line_extra, label_gap, block_gap = (0, 2, tpx(6, k)) if IS_WEB else (tpx(6, k), tpx(8, k), tpx(16, k))
+    # More room between the lines, the labels and the sections.
+    line_extra, label_gap, block_gap = tpx(6, k), tpx(8, k), tpx(16, k)
 
     def paragraph(text, x, y, width, color, font, limit):
-        if IS_WEB:
-            return draw_paragraph(surface, text, x, y, width, color, font, limit=limit)
         return _airy_paragraph(surface, text, x, y, width, color, font, limit, line_extra)
 
     surface.fill(SCREEN_BG)
@@ -70,7 +67,7 @@ def draw_background_screen(surface, game, buttons):
         y = paragraph(text, x, y, w, color, font, bottom) + block_gap
 
     draw_text(surface, fit_text(game.background.upper(), body, w), x, y, GREEN, body)
-    y += body.get_linesize() + (4 if IS_WEB else tpx(10, k))
+    y += body.get_linesize() + tpx(10, k)
     blurb_font = small if y + small.get_linesize() * 2 <= bottom else tiny
     y = paragraph(chosen["blurb"], x, y, w, WHITE, blurb_font, bottom) + block_gap
     block("STARTING VEHICLES", ", ".join(chosen["vehicles"]))
