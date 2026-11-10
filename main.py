@@ -171,7 +171,7 @@ Version history (newest first; older entries are grouped):
 - 2.19: Windows desktop build: DPI awareness is on again (window.enable_dpi_awareness, window.DPI_AWARE): the game draws in real pixels instead of
         Windows enlarging (and blurring) the window by 125 / 150 %, and the default window is opened at WIDTH x HEIGHT times the screen's scale factor
         (this is what made the window tiny when it was tried before). Text and art are sharp and no longer look oversized. Also the scene's vehicles are shrunk from the
-        full PNG on desktop at 2x or more (ui/convoy._sharp_vehicle). The lore screen's story uses the 24 px font and more line spacing when it fits (ui/screens.draw_lore_screen) and the background screen's text gets more line and section spacing (ui/backgrounds); both also in the browser. Browser build unchanged. Gameplay unchanged.
+        full PNG (desktop and browser) at 2x or more (ui/convoy._sharp_vehicle). The lore screen's story uses the 24 px font and more line spacing when it fits (ui/screens.draw_lore_screen) and the background screen's text gets more line and section spacing (ui/backgrounds); both also in the browser. Browser build unchanged. Gameplay unchanged.
 - 2.18: bigger text where there is room (the pixel font only has 8 px and 16 px sizes, and a lot of text sat at 8 px even in a big window):
         the vehicle name labels in the convoy scene (ui/convoy._label_font), the RECENT EVENTS log (long messages wrap instead of
         forcing 8 px: _wrapped_events), the right-hand CURRENT STOP column (stop name on two lines, descriptions and key hints

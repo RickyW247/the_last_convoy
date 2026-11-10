@@ -7,7 +7,6 @@ from functools import lru_cache
 
 import pygame
 
-from platform_web import IS_WEB
 
 from widgets import PIX, draw_frame, draw_panel
 
@@ -279,7 +278,7 @@ def _dust_fractions(vehicle, coarse):
     return rig_dust_points(look, vehicle.trailer, own, TRAILER_DUST[vehicle.trailer], coarse)
 
 
-SHARP_SCALE = 2   # from this whole-number scale up (desktop build only) vehicles are shrunk from the full PNG, not enlarged
+SHARP_SCALE = 2   # from this whole-number scale up (desktop and browser) vehicles are shrunk from the full PNG, not enlarged
 _SHARP_CACHE = {}   # (look, trailer, size) -> smooth-shrunk surface of the full-resolution picture
 
 
@@ -323,7 +322,7 @@ def _convoy_sprites(vehicles, scene):
         look = vehicle.sprite_type   # an upgrade can change the picture (the Semi-Truck's trailer)
         s = get_rig_sprite(look, vehicle.trailer, coarse=bool(index))   # the vehicle plus the trailer it tows, if any
         size = (max(1, int(s.get_width() * scale)), max(1, int(s.get_height() * scale)))
-        sharp = _sharp_vehicle(look, vehicle.trailer, size) if index == 0 and scale >= SHARP_SCALE and not IS_WEB else None
+        sharp = _sharp_vehicle(look, vehicle.trailer, size) if index == 0 and scale >= SHARP_SCALE else None
         scaled.append(sharp or scaled_image(("vehicle", look, vehicle.trailer, index), s, size))
     return scaled, index, scale, gap, unit
 

@@ -29,8 +29,11 @@ jobs:
             ffmpeg -nostdin -y -loglevel error -i "$f" -c:a libvorbis -q:a 7 -ar 44100 "${f%.*}.ogg" || exit 1
             rm "$f"
           done
-      - name: Build the web version
-        run: python -m pygbag --build --title "The Last Convoy" site
+      - name: Build the web version (with the custom loading screen)
+        # custom.tmpl is in the repo root and also copied into site/ by the rsync above, so a relative path works either way
+        run: python -m pygbag --build --title "The Last Convoy" --template custom.tmpl site
+      - name: Copy the pixel font next to index.html (used by the loading screen)
+        run: cp site/assets/fonts/pixel.ttf site/build/web/pixel.ttf || echo "pixel.ttf not found, the loading screen will use a fallback font"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/build/web
