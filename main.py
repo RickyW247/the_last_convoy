@@ -1,5 +1,5 @@
 """THE LAST CONVOY — Prototype README
-Version: 2.18
+Version: 2.19
 
 Development / versioning convention:
 - For every update, increment the version number (e.g. 2.0 -> 2.1; the numbering went from 1.99 straight to 2.0).
@@ -168,6 +168,10 @@ Project files:
 Setup: python -m pip install pygame | Run: python main.py | Test: python test_convoy.py
 
 Version history (newest first; older entries are grouped):
+- 2.19: Windows desktop build: DPI awareness is on again (window.enable_dpi_awareness, window.DPI_AWARE): the game draws in real pixels instead of
+        Windows enlarging (and blurring) the window by 125 / 150 %, and the default window is opened at WIDTH x HEIGHT times the screen's scale factor
+        (this is what made the window tiny when it was tried before). Text and art are sharp and no longer look oversized. Also the scene's vehicles are shrunk from the
+        full PNG on desktop at 2x or more (ui/convoy._sharp_vehicle). The lore screen's story uses the 24 px font and more line spacing on desktop when it fits (ui/screens.draw_lore_screen) and the background screen's text gets more line and section spacing (ui/backgrounds). Browser build unchanged. Gameplay unchanged.
 - 2.18: bigger text where there is room (the pixel font only has 8 px and 16 px sizes, and a lot of text sat at 8 px even in a big window):
         the vehicle name labels in the convoy scene (ui/convoy._label_font), the RECENT EVENTS log (long messages wrap instead of
         forcing 8 px: _wrapped_events), the right-hand CURRENT STOP column (stop name on two lines, descriptions and key hints
@@ -314,9 +318,11 @@ def clamp_screens(game, size):
 def setup():
     """Start pygame, open the window, load the saved settings and create the Game. Called once by main()."""
     global SCREEN, CLOCK, game
-    # DPI awareness is switched off for now (_enable_dpi_awareness is kept but not called): it made the window tiny on
-    # scaled Windows screens. Windows scales the window itself again, as before v1.66.
-    window.initialize_windowed_size(WIDTH, HEIGHT)
+    # v2.19: DPI awareness is on again for the Windows desktop build (window.enable_dpi_awareness): the default window size is
+    # multiplied by the screen's scale factor, which fixes the tiny window it used to give. window.DPI_AWARE = False undoes it.
+    dpi = window.enable_dpi_awareness()   # Windows: real pixels instead of an OS-enlarged (blurry) window; 1.0 elsewhere
+    start = (round(WIDTH * dpi), round(HEIGHT * dpi))   # the default window is as big on screen as before, just sharp
+    window.initialize_windowed_size(*start)
     if IS_WEB:
         # In the browser the audio is mixed on the same thread as the game, so a slow frame can starve a small buffer
         # and crackle. A bigger buffer rides those out (a little more delay on sound effects, which is fine here).
@@ -325,7 +331,7 @@ def setup():
     if IS_WEB:
         install_leave_guard()   # the "Leave site?" dialog freezes the page: silence the audio while it is open
     SCREEN = pygame.display.set_mode(
-        (WIDTH, HEIGHT), pygame.RESIZABLE
+        start, pygame.RESIZABLE
     )
     pygame.display.set_caption("The Last Convoy — Prototype")
     SCREEN = window.fit_web_viewport(SCREEN)   # browser: start at the page's size, not the default WIDTH x HEIGHT

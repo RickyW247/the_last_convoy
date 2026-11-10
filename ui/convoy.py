@@ -7,6 +7,8 @@ from functools import lru_cache
 
 import pygame
 
+from platform_web import IS_WEB
+
 from widgets import PIX, draw_frame, draw_panel
 
 from .common import draw_paragraph, scaled_image
@@ -19,7 +21,8 @@ from map_data import SITES
 from .map_system import draw_minimap
 from .pixel_art import ART_BLOCK, COARSE, choose_vehicle_scale, pixelate
 from theme import ACCESS, FONT, GREEN, MUTED, PANEL, RED, SMALL, TINY, WHITE, YELLOW
-from .vehicle_rendering import get_rig_sprite, get_vehicle_sprite, reference_sprite_height, rig_dust_points
+from .vehicle_rendering import (get_rig_sprite, get_rig_source, get_vehicle_source, get_vehicle_sprite,
+                                reference_sprite_height, rig_dust_points)
 from upgrade_data import TRAILER_DUST, UPGRADE_LOOKS
 from vehicle_data import DEFAULT_DUST_POINTS, VEHICLE_DUST_POINTS, VEHICLE_LOOKS
 from textscale import text_scale, tpx
@@ -276,6 +279,29 @@ def _dust_fractions(vehicle, coarse):
     return rig_dust_points(look, vehicle.trailer, own, TRAILER_DUST[vehicle.trailer], coarse)
 
 
+SHARP_SCALE = 2   # from this whole-number scale up (desktop build only) vehicles are shrunk from the full PNG, not enlarged
+_SHARP_CACHE = {}   # (look, trailer, size) -> smooth-shrunk surface of the full-resolution picture
+
+
+def _sharp_vehicle(look, trailer, size):
+    """The vehicle (plus trailer) shrunk smoothly from its full-resolution PNG to `size`, or None when that is not
+    available. The PNGs are not perfectly regular pixel art, so enlarging the low-resolution sprite 3x or more looks
+    blurry; a smooth shrink of the original stays sharp (as on the vehicles screen's cards)."""
+    key = (look, trailer, size)
+    if key not in _SHARP_CACHE:
+        try:
+            source = get_rig_source(look, trailer) if trailer else get_vehicle_source(look)
+        except KeyError:
+            source = None
+        if source is None:
+            _SHARP_CACHE[key] = None
+        else:
+            if len(_SHARP_CACHE) > 64:
+                _SHARP_CACHE.clear()
+            _SHARP_CACHE[key] = pygame.transform.smoothscale(source, size)
+    return _SHARP_CACHE[key]
+
+
 def _convoy_sprites(vehicles, scene):
     """(scaled sprites, sprite index, scale, gap, unit) for the convoy in `scene`.
 
@@ -297,7 +323,8 @@ def _convoy_sprites(vehicles, scene):
         look = vehicle.sprite_type   # an upgrade can change the picture (the Semi-Truck's trailer)
         s = get_rig_sprite(look, vehicle.trailer, coarse=bool(index))   # the vehicle plus the trailer it tows, if any
         size = (max(1, int(s.get_width() * scale)), max(1, int(s.get_height() * scale)))
-        scaled.append(scaled_image(("vehicle", look, vehicle.trailer, index), s, size))
+        sharp = _sharp_vehicle(look, vehicle.trailer, size) if index == 0 and scale >= SHARP_SCALE and not IS_WEB else None
+        scaled.append(sharp or scaled_image(("vehicle", look, vehicle.trailer, index), s, size))
     return scaled, index, scale, gap, unit
 
 

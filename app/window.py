@@ -19,14 +19,17 @@ WEB_WHOLE_ZOOM_ONLY = True        # browser build: only whole-number zoom (sharp
 _web_frames = 0                   # web only: frames seen by fit_web_viewport (re-applies the canvas styles now and then)
 
 
-def enable_dpi_awareness():
-    """Windows only: request real-pixel window coordinates.
+DPI_AWARE = True   # desktop Windows: draw in real screen pixels (no blurry OS enlargement). False: Windows enlarges the window itself
 
-    Currently disabled because it caused the initial window to appear
-    extremely small on scaled Windows displays.
-    """
-    if sys.platform != "win32":
-        return
+
+def enable_dpi_awareness():
+    """Windows desktop build: ask for real-pixel window coordinates, so Windows no longer enlarges (and blurs) the
+    window on scaled screens (125 %, 150 % ...). Call before pygame.init() and before the window exists. Returns the
+    screen's scale factor (1.0 = 100 %), which the caller multiplies the default window size by: this is what made the
+    window tiny when the awareness was tried before. Does nothing (returns 1.0) in the browser, on other systems, when
+    DPI_AWARE is False or when anything goes wrong."""
+    if sys.platform != "win32" or IS_WEB or not DPI_AWARE:
+        return 1.0
 
     try:
         import ctypes
@@ -34,8 +37,17 @@ def enable_dpi_awareness():
             ctypes.windll.shcore.SetProcessDpiAwareness(2)  # per-monitor (Windows 8.1+)
         except (AttributeError, OSError):
             ctypes.windll.user32.SetProcessDPIAware()       # older Windows
+        scale = 1.0
+        try:
+            scale = ctypes.windll.user32.GetDpiForSystem() / 96.0       # Windows 10 1607+
+        except (AttributeError, OSError):
+            try:
+                scale = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100.0
+            except (AttributeError, OSError):
+                pass
+        return max(1.0, min(3.0, scale))
     except Exception:
-        pass
+        return 1.0
 
 
 def initialize_windowed_size(width, height):
@@ -179,7 +191,7 @@ def fit_web_viewport(surface):
 
     stretch_canvas_to_page()   # the canvas's box on the page follows the new surface size
     try:   # TEMPORARY check of which build is live: the tab title starts with the zoom and the surface size
-        pygame.display.set_caption("[v2.18 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
+        pygame.display.set_caption("[v2.19 %gx zoom, %dx%d] The Last Convoy" % (zoom, wanted[0], wanted[1]))
     except Exception:
         pass
     return surface
